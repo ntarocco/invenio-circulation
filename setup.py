@@ -3,8 +3,8 @@
 # Copyright (C) 2018 CERN.
 # Copyright (C) 2018 RERO.
 #
-# Invenio-Circulation is free software; you can redistribute it and/or modify it
-# under the terms of the MIT License; see LICENSE file for more details.
+# Invenio-Circulation is free software; you can redistribute it and/or modify
+# it under the terms of the MIT License; see LICENSE file for more details.
 
 """Invenio module for the circulation of bibliographic items."""
 
@@ -27,18 +27,27 @@ tests_require = [
     'pytest>=2.8.0',
 ]
 
+invenio_search_version = '1.0.1'
+invenio_db_version = '1.0.2'
+
 extras_require = {
+    'elasticsearch5': [
+        'invenio-search[elasticsearch5]>={}'.format(invenio_search_version),
+    ],
+    'elasticsearch6': [
+        'invenio-search[elasticsearch6]>={}'.format(invenio_search_version),
+    ],
     'docs': [
         'Sphinx>=1.5.1',
     ],
     'mysql': [
-        'invenio-db[mysql,versioning]>=1.0.0b3',
+        'invenio-db[mysql,versioning]>={}'.format(invenio_db_version),
     ],
     'postgresql': [
-        'invenio-db[postgresql,versioning]>=1.0.0b3',
+        'invenio-db[postgresql,versioning]>={}'.format(invenio_db_version),
     ],
     'sqlite': [
-        'invenio-db[versioning]>=1.0.0b3',
+        'invenio-db[versioning]>={}'.format(invenio_db_version),
     ],
     'pygraphviz': [
         'pygraphviz>=1.3.1'
@@ -48,7 +57,8 @@ extras_require = {
 
 extras_require['all'] = []
 for name, reqs in extras_require.items():
-    if name in ('mysql', 'postgresql', 'sqlite'):
+    if name in ('mysql', 'postgresql', 'sqlite', 'elasticsearch5',
+                'elasticsearch6'):
         continue
     extras_require['all'].extend(reqs)
 
@@ -58,10 +68,13 @@ setup_requires = [
 ]
 
 install_requires = [
-    'Flask-BabelEx>=0.9.2',
+    'Flask-BabelEx>=0.9.3',
     'transitions>=0.6.8',
-    'invenio-db>=1.0.0',
-    'invenio-records>=1.0.0'
+    'invenio-base>=1.0.1',
+    'invenio-pidstore>=1.0.0',
+    'invenio-records>=1.0.0',
+    'invenio-records-rest>=1.1.2',
+    'invenio-rest>=1.0.0'
 ]
 
 packages = find_packages()
@@ -88,26 +101,21 @@ setup(
     include_package_data=True,
     platforms='any',
     entry_points={
+        'flask.commands': [
+            'circulation = invenio_circulation.cli:circulation',
+        ],
         'invenio_base.apps': [
             'invenio_circulation = invenio_circulation:InvenioCirculation',
         ],
         'invenio_i18n.translations': [
             'messages = invenio_circulation',
         ],
-        'flask.commands': [
-            'circulation = invenio_circulation.cli:circulation',
+        'invenio_pidstore.fetchers': [
+            'circ_loanid = invenio_circulation.pid.fetchers:loanid_fetcher',
         ],
-        # TODO: Edit these entry points to fit your needs.
-        # 'invenio_access.actions': [],
-        # 'invenio_admin.actions': [],
-        # 'invenio_assets.bundles': [],
-        # 'invenio_base.api_apps': [],
-        # 'invenio_base.api_blueprints': [],
-        # 'invenio_base.blueprints': [],
-        # 'invenio_celery.tasks': [],
-        # 'invenio_db.models': [],
-        # 'invenio_pidstore.minters': [],
-        # 'invenio_records.jsonresolver': [],
+        'invenio_pidstore.minters': [
+            'circ_loanid = invenio_circulation.pid.minters:loanid_minter',
+        ],
     },
     extras_require=extras_require,
     install_requires=install_requires,

@@ -30,12 +30,9 @@ def example_app():
     # Setup application
     assert subprocess.call('./app-setup.sh', shell=True) == 0
 
-    # Setup fixtures
-    assert subprocess.call('./app-fixtures.sh', shell=True) == 0
-
     # Start example app
     webapp = subprocess.Popen(
-        'FLASK_APP=app.py flask run --debugger -p 5000',
+        'FLASK_APP=app.py flask run',
         stdout=subprocess.PIPE, preexec_fn=os.setsid, shell=True)
     time.sleep(10)
     yield webapp
@@ -50,8 +47,12 @@ def example_app():
     os.chdir(current_dir)
 
 
-def test_example_app_role_admin(example_app):
+def test_example_app_get_loan(example_app):
     """Test example app."""
-    cmd = 'curl http://0.0.0.0:5000/'
+    cmd = 'FLASK_APP=app.py flask fixtures loans'
+    exit_status = subprocess.call(cmd, shell=True)
+    assert exit_status == 0
+
+    cmd = 'curl http://localhost:5000/circulation/loan/1'
     output = subprocess.check_output(cmd, shell=True)
-    assert b'Welcome to Invenio-Circulation' in output
+    assert b'metadata' in output

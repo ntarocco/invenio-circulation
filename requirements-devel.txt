@@ -5,9 +5,11 @@
 #
 # Invenio-Circulation is free software; you can redistribute it and/or modify it
 # under the terms of the MIT License; see LICENSE file for more details.
-#
-# TODO: Add development versions of some important dependencies here to get a
-#       warning when there are breaking upstream changes, e.g.:
-#
-#     -e git+git://github.com/mitsuhiko/werkzeug.git#egg=Werkzeug
-#     -e git+git://github.com/mitsuhiko/jinja2.git#egg=Jinja2
+
+-e git+https://github.com/inveniosoftware/invenio-base.git#egg=invenio-base
+-e git+https://github.com/inveniosoftware/invenio-db.git#egg=invenio-db
+-e git+https://github.com/inveniosoftware/invenio-pidstore.git#egg=invenio-pidstore
+-e git+https://github.com/inveniosoftware/invenio-records.git#egg=invenio-records
+-e git+https://github.com/inveniosoftware/invenio-records-rest.git#egg=invenio-records-rest
+-e git+https://github.com/inveniosoftware/invenio-rest.git#egg=invenio-rest
+-e git+https://github.com/inveniosoftware/invenio-search.git#egg=invenio-search

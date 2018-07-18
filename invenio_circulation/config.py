@@ -8,17 +8,45 @@
 
 """Invenio module for the circulation of bibliographic items."""
 
-# TODO: This is an example file. Remove it if your package does not use any
-# extra configuration variables.
-
 from .utils import is_checkout_valid, item_location_retriever
 
-CIRCULATION_DEFAULT_VALUE = 'foobar'
-"""Default value for the application."""
-
-CIRCULATION_BASE_TEMPLATE = 'invenio_circulation/base.html'
-"""Default base template for the demo page."""
-
 CIRCULATION_ITEM_LOCATION_RETRIEVER = item_location_retriever
+"""."""
 
 CIRCULATION_POLICIES = dict(checkout=is_checkout_valid)
+"""."""
+
+_CIRCULATION_LOAN_PID_TYPE = 'loanid'
+"""."""
+
+_CIRCULATION_LOAN_MINTER = 'circ_loanid'
+"""."""
+
+_CIRCULATION_LOAN_FETCHER = 'circ_loanid'
+"""."""
+
+CIRCULATION_REST_ENDPOINTS = dict(
+    loanid=dict(
+        pid_type=_CIRCULATION_LOAN_PID_TYPE,
+        pid_minter=_CIRCULATION_LOAN_MINTER,
+        pid_fetcher=_CIRCULATION_LOAN_FETCHER,
+        # search_class=RecordsSearch,
+        # indexer_class=RecordIndexer,
+        search_index=None,
+        search_type=None,
+        record_serializers={
+            'application/json': ('invenio_records_rest.serializers'
+                                 ':json_v1_response'),
+        },
+        search_serializers={
+            'application/json': ('invenio_records_rest.serializers'
+                                 ':json_v1_search'),
+        },
+        list_route='/circulation/loan/',
+        item_route='/circulation/loan/<pid(loanid):pid_value>',
+        default_media_type='application/json',
+        max_result_window=10000,
+        error_handlers=dict(),
+    ),
+)
+"""."""

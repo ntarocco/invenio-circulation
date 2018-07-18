@@ -21,7 +21,12 @@ from flask.cli import ScriptInfo
 from flask_babelex import Babel
 from invenio_db import db as db_
 from invenio_db.ext import InvenioDB
+from invenio_pidstore.ext import InvenioPIDStore
 from invenio_records.ext import InvenioRecords
+from invenio_records_rest.ext import InvenioRecordsREST
+from invenio_records_rest.utils import PIDConverter
+from invenio_records_rest.views import create_blueprint_from_app
+from invenio_search.ext import InvenioSearch
 from sqlalchemy_utils.functions import create_database, database_exists
 
 from invenio_circulation.ext import InvenioCirculation
@@ -58,24 +63,18 @@ def diagram_file_name():
     os.remove(file_name)
 
 
-@pytest.yield_fixture(scope='session')
-def tmp_db_path():
-    """Temporary database path."""
-    os_path = tempfile.mkstemp(prefix='circulation_test_', suffix='.db')[1]
-    path = 'sqlite:///' + os_path
-    yield path
-    os.remove(os_path)
-
-
 @pytest.fixture()
-def base_app(instance_path, tmp_db_path):
+def base_app(instance_path):
     """Flask application fixture."""
     app_ = Flask('testapp', instance_path=instance_path)
     app_.config.update(
+        SERVER_NAME='localhost:5000',
         SECRET_KEY='SECRET_KEY',
         SQLALCHEMY_DATABASE_URI=os.environ.get('SQLALCHEMY_DATABASE_URI',
-                                               tmp_db_path),
+                                               'sqlite://'),  # in memory
         SQLALCHEMY_TRACK_MODIFICATIONS=True,
+        # No permission checking
+        RECORDS_REST_DEFAULT_READ_PERMISSION_FACTORY=None,
         TESTING=True,
     )
     Babel(app_)
@@ -85,9 +84,14 @@ def base_app(instance_path, tmp_db_path):
 @pytest.yield_fixture()
 def app(base_app):
     """Flask application fixture."""
+    base_app.url_map.converters['pid'] = PIDConverter
     InvenioDB(base_app)
     InvenioRecords(base_app)
+    InvenioRecordsREST(base_app)
+    InvenioPIDStore(base_app)
+    InvenioSearch(base_app)
     InvenioCirculation(base_app)
+    base_app.register_blueprint(create_blueprint_from_app(base_app))
     with base_app.app_context():
         yield base_app
 
@@ -101,3 +105,10 @@ def db(app):
     yield db_
     db_.session.remove()
     db_.drop_all()
+
+
+@pytest.fixture()
+def json_headers(app):
+    """JSON headers."""
+    return [('Content-Type', 'application/json'),
+            ('Accept', 'application/json')]
