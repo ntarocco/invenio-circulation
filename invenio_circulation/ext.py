@@ -11,6 +11,7 @@
 from __future__ import absolute_import, print_function
 
 from . import config
+from .views import build_blueprint_with_loan_actions
 
 
 class InvenioCirculation(object):
@@ -27,6 +28,9 @@ class InvenioCirculation(object):
         app.config.setdefault('RECORDS_REST_ENDPOINTS', {})
         app.config['RECORDS_REST_ENDPOINTS'].update(
             app.config['CIRCULATION_REST_ENDPOINTS'])
+
+        blueprint = build_blueprint_with_loan_actions(app)
+        app.register_blueprint(blueprint)
         app.extensions['invenio-circulation'] = self
 
     def init_config(self, app):

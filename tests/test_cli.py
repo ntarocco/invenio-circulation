@@ -15,14 +15,16 @@ import os
 import pytest
 from click.testing import CliRunner
 
-from invenio_circulation.api import DIAGRAM_ENABLED
 from invenio_circulation.cli import diagram
 
 
 def test_cli_diagram(script_info, diagram_file_name):
     """."""
-    if not DIAGRAM_ENABLED:
+    try:
+        import pygraphviz
+    except ImportError:
         pytest.skip('pygraphviz module is not installed')
+
     runner = CliRunner()
 
     result = runner.invoke(

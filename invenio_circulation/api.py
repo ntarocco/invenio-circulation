@@ -15,77 +15,21 @@ from flask import current_app
 from invenio_records.api import Record
 from transitions import Machine
 
-DIAGRAM_ENABLED = True
-try:
-    import pygraphviz
-    from transitions.extensions import GraphMachine
-except ImportError:
-    DIAGRAM_ENABLED = False
-
-STATES = [
-    'CREATED',
-    'PENDING',
-    'ITEM_ON_LOAN',
-    'ITEM_RETURNED',
-    'ITEM_IN_TRANSIT',
-    'ITEM_AT_DESK',
-]
-
-TRANSITIONS = [
-    {
-        'trigger': 'request',
-        'source': 'CREATED',
-        'dest': 'PENDING',
-        'before': 'set_request_parameters',
-        'conditions': 'is_request_valid',
-    },
-    {
-        'trigger': 'validate_request',
-        'source': 'PENDING',
-        'dest': 'ITEM_IN_TRANSIT',
-        'before': 'set_parameters',
-        'conditions': 'is_validate_request_valid',
-        'unless': 'is_pickup_at_same_library',
-    },
-    {
-        'trigger': 'validate_request',
-        'source': 'PENDING',
-        'dest': 'ITEM_AT_DESK',
-        'before': 'set_parameters',
-        'conditions': [
-            'is_validate_request_valid',
-            'is_pickup_at_same_library',
-        ],
-    },
-    {
-        'trigger': 'checkout',
-        'source': 'CREATED',
-        'dest': 'ITEM_ON_LOAN',
-        'before': 'set_parameters',
-        'conditions': 'is_checkout_valid',
-    },
-    {
-        'trigger': 'checkin',
-        'source': 'ITEM_ON_LOAN',
-        'dest': 'ITEM_RETURNED',
-        'before': 'set_parameters',
-        'conditions': 'is_checkin_valid',
-    },
-]
-
 
 class Loan(Record):
     """Loan record class."""
 
     def __init__(self, data, model=None):
         """."""
-        data.setdefault('state', STATES[0])
+        self.states = current_app.config['CIRCULATION_LOAN_STATES']
+        self.transitions = current_app.config['CIRCULATION_LOAN_TRANSITIONS']
+        data.setdefault('state', self.states[0])
         super(Loan, self).__init__(data, model)
         Machine(
             model=self,
-            states=STATES,
+            states=self.states,
             send_event=True,
-            transitions=TRANSITIONS,
+            transitions=self.transitions,
             initial=self['state'],
             finalize_event='save',
         )
@@ -94,25 +38,6 @@ class Loan(Record):
     def policies(self):
         """."""
         return current_app.config.get('CIRCULATION_POLICIES')
-
-    @classmethod
-    def export_diagram(cls, output_file):
-        """."""
-        if not DIAGRAM_ENABLED:
-            warnings.warn(
-                'dependency not found, please install pygraphviz to '
-                'export the circulation state diagram.'
-            )
-            return False
-        m = GraphMachine(
-            states=STATES,
-            transitions=TRANSITIONS,
-            initial=STATES[0],
-            show_conditions=True,
-            title='Circulation State Diagram',
-        )
-        m.get_graph().draw(output_file, prog='dot')
-        return True
 
     def set_request_parameters(self, event):
         """."""
@@ -174,3 +99,28 @@ class Loan(Record):
     def is_validate_request_valid(self, event):
         """."""
         return self.policies['validate_request'](**event.kwargs)
+
+    @classmethod
+    def export_diagram(cls, output_file):
+        """."""
+        from transitions.extensions import GraphMachine
+
+        try:
+            import pygraphviz
+        except ImportError:
+            warnings.warn('dependency not found, please install pygraphviz to '
+                          'export the circulation state diagram.')
+            return False
+
+        # FIXME: replace config with current_app.config when CLI has appcontext
+        # states = current_app.config['CIRCULATION_LOAN_STATES']
+        # transitions = current_app.config['CIRCULATION_LOAN_TRANSITIONS']
+        from invenio_circulation.config import CIRCULATION_LOAN_STATES, \
+            CIRCULATION_LOAN_TRANSITIONS
+        states = CIRCULATION_LOAN_STATES
+        transitions = CIRCULATION_LOAN_TRANSITIONS
+        m = GraphMachine(states=states, transitions=transitions,
+                         initial=states[0], show_conditions=True,
+                         title='Circulation State Diagram')
+        m.get_graph().draw(output_file, prog='dot')
+        return True
