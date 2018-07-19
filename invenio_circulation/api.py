@@ -15,12 +15,7 @@ from flask import current_app
 from invenio_records.api import Record
 from transitions import Machine
 
-DIAGRAM_ENABLED = True
-try:
-    import pygraphviz
-    from transitions.extensions import GraphMachine
-except ImportError:
-    DIAGRAM_ENABLED = False
+import config
 
 
 class Loan(Record):
@@ -83,12 +78,22 @@ class Loan(Record):
     @classmethod
     def export_diagram(cls, output_file):
         """."""
-        if not DIAGRAM_ENABLED:
+        from transitions.extensions import GraphMachine
+
+        try:
+            import pygraphviz
+        except ImportError:
             warnings.warn('dependency not found, please install pygraphviz to '
                           'export the circulation state diagram.')
             return False
-        m = GraphMachine(states=self.states, transitions=self.transitions,
-                         initial=self.states[0], show_conditions=True,
+
+        # FIXME: replace config with current_app.config when CLI has appcontext
+        # states = current_app.config['CIRCULATION_LOAN_STATES']
+        # transitions = current_app.config['CIRCULATION_LOAN_TRANSITIONS']
+        states = config.CIRCULATION_LOAN_STATES
+        transitions = config.CIRCULATION_LOAN_TRANSITIONS
+        m = GraphMachine(states=states, transitions=transitions,
+                         initial=states[0], show_conditions=True,
                          title='Circulation State Diagram')
         m.get_graph().draw(output_file, prog='dot')
         return True

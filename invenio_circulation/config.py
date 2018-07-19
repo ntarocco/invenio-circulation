@@ -69,8 +69,7 @@ CIRCULATION_LOAN_FETCHER = 'circ_loanid'
 CIRCULATION_LOAN_ITEM_ROUTE = '/circulation/loan/<pid(loanid):pid_value>'
 """."""
 
-
-
+_Loan_PID = 'pid(loanid,record_class="invenio_circulation.api:Loan")'
 CIRCULATION_REST_ENDPOINTS = dict(
     loanid=dict(
         pid_type=CIRCULATION_LOAN_PID_TYPE,
@@ -78,8 +77,8 @@ CIRCULATION_REST_ENDPOINTS = dict(
         pid_fetcher=CIRCULATION_LOAN_FETCHER,
         # search_class=RecordsSearch,
         # indexer_class=RecordIndexer,
-        search_index=None,
-        search_type=None,
+        # search_index=None,
+        # search_type=None,
         record_class=Loan,
         record_serializers={
             'application/json': ('invenio_records_rest.serializers'
@@ -90,7 +89,7 @@ CIRCULATION_REST_ENDPOINTS = dict(
                                  ':json_v1_search'),
         },
         list_route='/circulation/loan/',
-        item_route='/circulation/loan/<pid(loanid):pid_value>',
+        item_route='/circulation/loan/<{0}:pid_value>'.format(_Loan_PID),
         default_media_type='application/json',
         max_result_window=10000,
         error_handlers=dict(),
