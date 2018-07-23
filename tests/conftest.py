@@ -19,6 +19,7 @@ import pytest
 from flask import Flask
 from flask.cli import ScriptInfo
 from flask_babelex import Babel
+from flask_login import LoginManager, UserMixin
 from invenio_db import db as db_
 from invenio_db.ext import InvenioDB
 from invenio_pidstore.ext import InvenioPIDStore
@@ -121,3 +122,23 @@ def json_headers(app):
     """JSON headers."""
     return [('Content-Type', 'application/json'),
             ('Accept', 'application/json')]
+
+
+@pytest.yield_fixture
+def app_with_default_permissions(app):
+    """Test default deny all permission."""
+    lm = LoginManager(app)
+
+    # Allow easy login for tests purposes :-)
+    class User(UserMixin):
+        def __init__(self, id):
+            self.id = id
+
+    @lm.request_loader
+    def load_user(request):
+        uid = request.args.get('user', type=int)
+        if uid:
+            return User(uid)
+        return None
+
+    yield app

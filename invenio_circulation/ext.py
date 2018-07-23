@@ -17,6 +17,8 @@ from .views import build_blueprint_with_loan_actions
 class InvenioCirculation(object):
     """Invenio-Circulation extension."""
 
+    _action_permission_factories = {}
+
     def __init__(self, app=None):
         """Extension initialization."""
         if app:
@@ -38,3 +40,8 @@ class InvenioCirculation(object):
         for k in dir(config):
             if k.startswith('CIRCULATION_'):
                 app.config.setdefault(k, getattr(config, k))
+
+    @property
+    def action_permission_factories(self):
+        """."""
+        return self._action_permission_factories

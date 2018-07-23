@@ -1,15 +1,19 @@
 from copy import deepcopy
+from functools import wraps
 
 from flask import Blueprint, request, current_app
+from functools import partial
 from invenio_db import db
 from invenio_records_rest.views import pass_record, create_error_handlers as \
-    records_rest_error_handlers
-from invenio_records_rest.utils import obj_or_import_string
+    records_rest_error_handlers, need_record_permission, \
+    verify_record_permission
+from invenio_records_rest.utils import obj_or_import_string, deny_all
 from invenio_rest import ContentNegotiatedMethodView
 from invenio_rest.views import create_api_errorhandler
 from transitions import MachineError
 
 from invenio_circulation.errors import LoanActionError
+from invenio_circulation.proxies import current_circulation
 
 HTTP_CODES = {
     'method_not_allowed': 405,
@@ -83,6 +87,16 @@ def build_blueprint_with_loan_actions(app):
         return blueprint
 
 
+def need_record_action_permission(f):
+    @wraps(f)
+    def inner(self, pid, record, action, **kwargs):
+        factory = current_circulation.action_permission_factories.get(
+            request.view_args['action'], deny_all)
+        verify_record_permission(factory, record)
+        return f(self, pid, record, action, **kwargs)
+    return inner
+
+
 class LoanActionResource(ContentNegotiatedMethodView):
     """Loan action resource."""
 
@@ -98,8 +112,11 @@ class LoanActionResource(ContentNegotiatedMethodView):
         )
         for key, value in ctx.items():
             setattr(self, key, value)
+        for key, value in current_circulation.action_permission_factories.items():
+            setattr(self, key, value)
 
     @pass_record
+    @need_record_action_permission
     def post(self, pid, record, action, **kwargs):
         """Handle loan action."""
         params = request.get_json()

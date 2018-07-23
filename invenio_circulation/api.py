@@ -16,6 +16,7 @@ from invenio_records.api import Record
 from transitions import Machine
 
 import config
+from invenio_circulation.proxies import current_circulation
 
 
 class Loan(Record):
@@ -25,12 +26,21 @@ class Loan(Record):
         """."""
         self.states = current_app.config['CIRCULATION_LOAN_STATES']
         self.transitions = current_app.config['CIRCULATION_LOAN_TRANSITIONS']
+        self._popup_extra_kwargs()
         data.setdefault('state', self.states[0])
         super(Loan, self).__init__(data, model)
         Machine(model=self, states=self.states, send_event=True,
                 transitions=self.transitions,
                 initial=self['state'],
                 finalize_event='save')
+
+    def _popup_extra_kwargs(self):
+        """."""
+        for t in self.transitions:
+            if 'action_permission_factory' in t:
+                action = t['trigger']
+                current_circulation.action_permission_factories[action] = t['action_permission_factory']
+                del t['action_permission_factory']
 
     def set_request_parameters(self, event):
         """."""

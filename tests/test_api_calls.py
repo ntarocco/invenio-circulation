@@ -36,8 +36,9 @@ def test_api_get_loan(app, db, json_headers):
         assert loan_dict['metadata']['state'] == loan['state']
 
 
-def test_api_loan_valid_action(app, db, json_headers, params):
+def test_api_loan_valid_action(app_with_default_permissions, db, json_headers, params):
     """Test API valid action on loan."""
+    app = app_with_default_permissions
     loan = Loan.create({})
     minted_loan = loanid_minter(loan.id, loan)
     db.session.commit()
@@ -70,3 +71,20 @@ def test_api_loan_invalid_action(app, db, json_headers, params):
         assert res.status_code == HTTP_CODES['method_not_allowed']
         error_dict = json.loads(res.data.decode('utf-8'))
         assert 'message' in error_dict
+
+
+def test_api_loan_action_no_permission(app_with_default_permissions, db, json_headers, params):
+    """Test API valid action on loan."""
+    app = app_with_default_permissions
+    loan = Loan.create({})
+    minted_loan = loanid_minter(loan.id, loan)
+    db.session.commit()
+
+    loan_pid = loanid_fetcher(loan.id, loan)
+    assert minted_loan.pid_value == loan_pid.pid_value
+
+    with app.test_client() as client:
+        url = url_for('invenio_circulation.loanid_actions',
+                      pid_value=loan_pid.pid_value, action='request')
+        res = client.post(url, headers=json_headers, data=json.dumps(params))
+        assert res.status_code == 403

@@ -8,6 +8,8 @@
 
 """Invenio module for the circulation of bibliographic items."""
 
+from invenio_records_rest.utils import deny_all
+
 from .api import Loan
 from .utils import is_checkout_valid, item_location_retriever
 
@@ -21,7 +23,8 @@ CIRCULATION_LOAN_TRANSITIONS = [{
     'trigger': 'request',
     'source': 'CREATED',
     'dest': 'PENDING',
-    'before': 'set_request_parameters'
+    'before': 'request_set_parameters',
+    'action_permission_factory': deny_all
 }, {
     'trigger': 'validate_request',
     'source': 'PENDING',
@@ -33,13 +36,14 @@ CIRCULATION_LOAN_TRANSITIONS = [{
     'source': 'PENDING',
     'dest': 'ITEM_AT_DESK',
     'before': 'set_parameters',
-    'conditions': 'is_pickup_at_same_library'
+    'conditions': ['is_pickup_at_same_library', 'validate_request_permissions']
 }, {
     'trigger': 'checkout',
     'source': 'CREATED',
     'dest': 'ITEM_ON_LOAN',
     'before': 'set_parameters',
-    'conditions': 'is_checkout_valid'
+    'conditions': 'is_checkout_valid',
+    'action_permission_factory': deny_all
 }, {
     'trigger': 'checkin',
     'source': 'ITEM_ON_LOAN',
