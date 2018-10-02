@@ -25,31 +25,31 @@ from .utils import get_default_extension_duration, \
     item_location_retriever, patron_exists
 
 _CIRCULATION_LOAN_PID_TYPE = 'loanid'
-"""."""
+"""Persistent Identifier for Loans."""
 
 _CIRCULATION_LOAN_MINTER = 'loanid'
-"""."""
+"""Minter PID for Loans."""
 
 _CIRCULATION_LOAN_FETCHER = 'loanid'
-"""."""
+"""Fetcher PID for Loans."""
 
 _Loan_PID = 'pid(loanid,record_class="invenio_circulation.api:Loan")'
-"""."""
-
-_CIRCULATION_LOAN_LINKS_FACTORY = loan_links_factory
-"""."""
+"""Loan PID url converter."""
 
 CIRCULATION_ITEMS_RETRIEVER_FROM_DOCUMENT = None
-"""Function that returns a list of item pids given a document pid."""
+"""Function that returns a list of item PIDs given a Document PID."""
 
 CIRCULATION_DOCUMENT_RETRIEVER_FROM_ITEM = None
-"""Function that returns the document pid of a given item pid."""
+"""Function that returns the Document PID of a given Item PID."""
 
-CIRCULATION_PERMISSION_FACTORY = allow_all
-"""."""
+CIRCULATION_STATES_ITEM_AVAILABLE = ['ITEM_RETURNED', 'CANCELLED']
+"""Defines the list of Loan states for which an Item is considered loanable.
 
-CIRCULATION_STATES_ITEM_AVAILABLE = ['ITEM_RETURNED']
-"""."""
+Only Items that have these circulation statuses are available and loanable
+by patrons."""
+
+CIRCULATION_LOAN_TRANSITIONS_DEFAULT_PERMISSION_FACTORY = allow_all
+"""Default permission factory for all Loans transitions."""
 
 CIRCULATION_LOAN_TRANSITIONS = {
     'CREATED': [
@@ -87,19 +87,19 @@ CIRCULATION_LOAN_TRANSITIONS = {
     'ITEM_RETURNED': [],
     'CANCELLED': [],
 }
-"""."""
+"""Default circulation Loans transitions."""
 
 CIRCULATION_LOAN_INITIAL_STATE = 'CREATED'
-"""."""
+"""Define the initial state name of a Loan."""
 
 CIRCULATION_PATRON_EXISTS = patron_exists
-"""."""
+"""Function that returns True if the given Patron exists."""
 
 CIRCULATION_ITEM_EXISTS = item_exists
-"""."""
+"""Function that returns True if the given Item exists."""
 
 CIRCULATION_ITEM_LOCATION_RETRIEVER = item_location_retriever
-"""."""
+"""Function that returns the Location PID of the given Item."""
 
 CIRCULATION_POLICIES = dict(
     checkout=dict(
@@ -113,7 +113,7 @@ CIRCULATION_POLICIES = dict(
         max_count=get_default_extension_max_count
     ),
 )
-"""."""
+"""Default circulation policies when performing an action on a Loan."""
 
 CIRCULATION_REST_ENDPOINTS = dict(
     loanid=dict(
@@ -134,12 +134,10 @@ CIRCULATION_REST_ENDPOINTS = dict(
         list_route='/circulation/loan/',
         item_route='/circulation/loan/<{0}:pid_value>'.format(_Loan_PID),
         default_media_type='application/json',
-        links_factory_imp=_CIRCULATION_LOAN_LINKS_FACTORY,
+        links_factory_imp=loan_links_factory,
         max_result_window=10000,
         error_handlers=dict(),
+        create_permission_factory_imp=allow_all
     ),
 )
-"""."""
-
-CIRCULATION_REST_PERMISSION_FACTORIES = {}
-"""."""
+"""REST endpoint configuration for circulation APIs."""

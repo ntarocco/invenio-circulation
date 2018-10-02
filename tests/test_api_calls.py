@@ -120,7 +120,7 @@ def test_api_loans_links_factory(app, db, json_headers, params,
     loan_pid = loan_pid_fetcher(loan.id, loan)
 
     expected_links = {
-        'available_actions': {
+        'actions': {
             'request': build_url_action_for_pid(loan_pid, 'request'),
             'checkout': build_url_action_for_pid(loan_pid, 'checkout')
         }

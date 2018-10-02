@@ -24,7 +24,7 @@ from invenio_jsonschemas import InvenioJSONSchemas
 from invenio_pidstore.ext import InvenioPIDStore
 from invenio_records.ext import InvenioRecords
 from invenio_records_rest.ext import InvenioRecordsREST
-from invenio_records_rest.utils import PIDConverter, allow_all
+from invenio_records_rest.utils import PIDConverter
 from invenio_records_rest.views import create_blueprint_from_app
 from invenio_search import InvenioSearch, current_search
 
@@ -41,9 +41,6 @@ def app_config(app_config):
     app_config["RECORDS_REST_DEFAULT_READ_PERMISSION_FACTORY"] = None
     app_config["CIRCULATION_ITEM_EXISTS"] = lambda x: True
     app_config["CIRCULATION_PATRON_EXISTS"] = lambda x: True
-    app_config["CIRCULATION_REST_PERMISSION_FACTORIES"] = dict(
-        loanid=dict(create_permission_factory_imp=allow_all)
-    )
     return app_config
 
 

@@ -35,8 +35,6 @@ class InvenioCirculation(object):
         self.init_config(app)
         app.config.setdefault("RECORDS_REST_ENDPOINTS", {})
 
-        self.update_circulation_rest_permissions(app)
-
         app.config["RECORDS_REST_ENDPOINTS"].update(
             app.config["CIRCULATION_REST_ENDPOINTS"]
         )
@@ -55,13 +53,6 @@ class InvenioCirculation(object):
         for k in dir(config):
             if k.startswith("CIRCULATION_"):
                 app.config.setdefault(k, getattr(config, k))
-
-    def update_circulation_rest_permissions(self, app):
-        """Update circulation rest permissions."""
-        for key, item in app.config[
-            "CIRCULATION_REST_PERMISSION_FACTORIES"
-        ].items():
-            app.config["CIRCULATION_REST_ENDPOINTS"][key].update(item)
 
     @cached_property
     def circulation(self):

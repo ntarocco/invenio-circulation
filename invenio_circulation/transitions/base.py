@@ -95,9 +95,8 @@ class Transition(object):
         self.src = src
         self.dest = dest
         self.trigger = trigger
-        self.permission_factory = permission_factory or \
-            current_app.config['CIRCULATION_PERMISSION_FACTORY']
-        # validate states
+        self.permission_factory = permission_factory or current_app.config[
+            'CIRCULATION_LOAN_TRANSITIONS_DEFAULT_PERMISSION_FACTORY']
         self.validate_transition_states()
 
     def ensure_item_is_available(self, loan):
