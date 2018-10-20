@@ -20,6 +20,7 @@ from six.moves import reduce
 
 from invenio_circulation.api import Loan
 from invenio_circulation.permissions import loan_reader
+from invenio_circulation.pidstore.pids import CIRCULATION_LOAN_MINTER
 
 
 class SwappedConfig:
@@ -67,7 +68,7 @@ def create_loan(data):
     with db.session.begin_nested():
         data = copy.deepcopy(data)
         rec_uuid = uuid.uuid4()
-        pid = current_pidstore.minters['loanid'](rec_uuid, data)
+        pid = current_pidstore.minters[CIRCULATION_LOAN_MINTER](rec_uuid, data)
         record = Loan.create(data, id_=rec_uuid)
         return pid, record
 

@@ -12,12 +12,11 @@
         "$schema": {
           "type": "keyword"
         },
-        "loanid": {
+        "loan_pid": {
           "type": "keyword"
         },
         "transaction_date": {
-          "type":   "date",
-          "format": "yyyy-MM-dd"
+          "type": "date"
         },
         "patron_pid": {
           "type": "keyword"
@@ -29,19 +28,16 @@
           "type": "keyword"
         },
         "end_date": {
-          "type":   "date",
-          "format": "yyyy-MM-dd"
+          "type": "date"
         },
         "state": {
           "type": "keyword"
         },
         "start_date": {
-          "type":   "date",
-          "format": "yyyy-MM-dd"
+          "type": "date"
         },
         "request_expire_date": {
-          "type":   "date",
-          "format": "yyyy-MM-dd"
+          "type": "date"
         },
         "pickup_location_pid": {
           "type": "keyword"

@@ -10,10 +10,11 @@
 
 from invenio_records_rest.utils import allow_all
 
-from invenio_circulation.permissions import views_permissions_factory
-
 from .api import Loan
 from .links import loan_links_factory
+from .permissions import views_permissions_factory
+from .pidstore.pids import CIRCULATION_LOAN_FETCHER, CIRCULATION_LOAN_MINTER, \
+    CIRCULATION_LOAN_PID_TYPE
 from .search import LoansSearch
 from .transitions.transitions import CreatedToItemOnLoan, CreatedToPending, \
     ItemAtDeskToItemOnLoan, ItemInTransitHouseToItemReturned, \
@@ -24,18 +25,6 @@ from .utils import get_default_extension_duration, \
     get_default_extension_max_count, get_default_loan_duration, \
     is_item_available, is_loan_duration_valid, item_exists, \
     item_location_retriever, patron_exists
-
-_CIRCULATION_LOAN_PID_TYPE = 'loanid'
-"""Persistent Identifier for Loans."""
-
-_CIRCULATION_LOAN_MINTER = 'loanid'
-"""Minter PID for Loans."""
-
-_CIRCULATION_LOAN_FETCHER = 'loanid'
-"""Fetcher PID for Loans."""
-
-_Loan_PID = 'pid(loanid,record_class="invenio_circulation.api:Loan")'
-"""Loan PID url converter."""
 
 CIRCULATION_ITEMS_RETRIEVER_FROM_DOCUMENT = None
 """Function that returns a list of item PIDs given a Document PID."""
@@ -116,11 +105,14 @@ CIRCULATION_POLICIES = dict(
 )
 """Default circulation policies when performing an action on a Loan."""
 
+_LOANID_CONVERTER = 'pid(loanid,record_class="invenio_circulation.api:Loan")'
+"""Loan PID url converter."""
+
 CIRCULATION_REST_ENDPOINTS = dict(
     loanid=dict(
-        pid_type=_CIRCULATION_LOAN_PID_TYPE,
-        pid_minter=_CIRCULATION_LOAN_MINTER,
-        pid_fetcher=_CIRCULATION_LOAN_FETCHER,
+        pid_type=CIRCULATION_LOAN_PID_TYPE,
+        pid_minter=CIRCULATION_LOAN_MINTER,
+        pid_fetcher=CIRCULATION_LOAN_FETCHER,
         search_class=LoansSearch,
         search_type=None,
         record_class=Loan,
@@ -133,7 +125,8 @@ CIRCULATION_REST_ENDPOINTS = dict(
                                  ':json_v1_search'),
         },
         list_route='/circulation/loans/',
-        item_route='/circulation/loans/<{0}:pid_value>'.format(_Loan_PID),
+        item_route='/circulation/loans/<{0}:pid_value>'.format(
+            _LOANID_CONVERTER),
         default_media_type='application/json',
         links_factory_imp=loan_links_factory,
         max_result_window=10000,
@@ -143,8 +136,5 @@ CIRCULATION_REST_ENDPOINTS = dict(
 )
 """REST endpoint configuration for circulation APIs."""
 
-
-# PERMISSIONS
-# ===
 CIRCULATION_VIEWS_PERMISSIONS_FACTORY = views_permissions_factory
 """Permissions factory for circulation views to handle actions."""

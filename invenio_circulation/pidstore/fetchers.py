@@ -10,13 +10,14 @@
 
 from invenio_pidstore.fetchers import FetchedPID
 
-from ..config import _CIRCULATION_LOAN_PID_TYPE
+from ..api import Loan
+from .pids import CIRCULATION_LOAN_PID_TYPE
 
 
 def loan_pid_fetcher(record_uuid, data):
     """Fetch PID from loan record."""
     return FetchedPID(
         provider=None,
-        pid_type=_CIRCULATION_LOAN_PID_TYPE,
-        pid_value=str(data[_CIRCULATION_LOAN_PID_TYPE])
+        pid_type=CIRCULATION_LOAN_PID_TYPE,
+        pid_value=str(data[Loan.pid_field])
     )

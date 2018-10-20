@@ -6,4 +6,13 @@
 # Invenio-Circulation is free software; you can redistribute it and/or modify
 # it under the terms of the MIT License; see LICENSE file for more details.
 
-"""Circulation schemas module."""
+"""Circulation PIDs."""
+
+CIRCULATION_LOAN_PID_TYPE = 'loanid'
+"""Persistent Identifier for Loans."""
+
+CIRCULATION_LOAN_MINTER = 'loanid'
+"""Minter PID for Loans."""
+
+CIRCULATION_LOAN_FETCHER = 'loanid'
+"""Fetcher PID for Loans."""

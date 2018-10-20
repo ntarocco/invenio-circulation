@@ -11,84 +11,57 @@
 from __future__ import absolute_import, print_function
 
 import json
+import uuid
 from os.path import dirname, join
 
 import mock
 import pytest
-from flask import Flask
-from flask_security import Security, SQLAlchemyUserDatastore
-from helpers import create_loan, test_views_permissions_factory
-from invenio_access import ActionRoles, InvenioAccess, superuser_access
-from invenio_accounts.models import Role, User
+from invenio_access import ActionRoles, superuser_access
+from invenio_accounts.models import Role
+from invenio_app.factory import create_api
 from invenio_db import db
-from invenio_db.ext import InvenioDB
-from invenio_indexer import InvenioIndexer
 from invenio_indexer.api import RecordIndexer
-from invenio_jsonschemas import InvenioJSONSchemas
-from invenio_pidstore.ext import InvenioPIDStore
-from invenio_records.ext import InvenioRecords
-from invenio_records_rest.ext import InvenioRecordsREST
-from invenio_records_rest.utils import PIDConverter
-from invenio_records_rest.views import create_blueprint_from_app
-from invenio_search import InvenioSearch, current_search
+from invenio_records_rest.utils import allow_all
+from invenio_search import current_search
 
 from invenio_circulation.api import Loan
-from invenio_circulation.ext import InvenioCirculation
 from invenio_circulation.permissions import loan_access
+from invenio_circulation.pidstore.minters import loan_pid_minter
+
+from .helpers import create_loan, test_views_permissions_factory
+
+
+@pytest.fixture(scope='module')
+def create_app():
+    """Return API app."""
+    return create_api
 
 
 @pytest.fixture(scope="module")
 def app_config(app_config):
     """Flask application fixture."""
-    app_config["SERVER_NAME"] = "localhost:5000"
     app_config["JSONSCHEMAS_ENDPOINT"] = "/schema"
     app_config["JSONSCHEMAS_HOST"] = "localhost:5000"
-    app_config["RECORDS_REST_DEFAULT_READ_PERMISSION_FACTORY"] = None
+    app_config["RECORDS_REST_DEFAULT_READ_PERMISSION_FACTORY"] = allow_all
     app_config["CIRCULATION_ITEM_EXISTS"] = lambda x: True
     app_config["CIRCULATION_PATRON_EXISTS"] = lambda x: True
     return app_config
 
 
-@pytest.fixture(scope="module")
-def create_app():
-    """Flask application fixture."""
-    def _create_app(**kwargs):
-        app = Flask("test base")
-        app.config.update(kwargs)
-        return app
-
-    return _create_app
-
-
-@pytest.fixture(scope="module")
-def base_app(base_app):
-    """Flask base application fixture."""
-    base_app.url_map.converters["pid"] = PIDConverter
-    user_datastore = SQLAlchemyUserDatastore(db, User, Role)
-    Security(base_app, user_datastore)
-    InvenioDB(base_app)
-    InvenioRecords(base_app)
-    InvenioRecordsREST(base_app)
-    InvenioPIDStore(base_app)
-    InvenioIndexer(base_app)
-    InvenioPIDStore(base_app)
-    InvenioSearch(base_app)
-    InvenioCirculation(base_app)
-    InvenioJSONSchemas(base_app)
-    InvenioAccess(base_app)
-    base_app.register_blueprint(create_blueprint_from_app(base_app))
-    yield base_app
-
-
-@pytest.yield_fixture()
-def loan_created(db):
+@pytest.fixture()
+def loan_created(app):
     """Minimal Loan object."""
-    yield Loan.create({})
+    record_uuid = uuid.uuid4()
+    new_loan = {}
+    loan_pid_minter(record_uuid, data=new_loan)
+    loan = Loan.create(data=new_loan, id_=record_uuid)
+    db.session.commit()
+    yield loan
 
 
 @pytest.fixture()
 def params():
-    """."""
+    """Common API REST payload."""
     return dict(
         transaction_user_pid="user_pid",
         patron_pid="patron_pid",
@@ -96,12 +69,6 @@ def params():
         transaction_location_pid="loc_pid",
         transaction_date="2018-02-01T09:30:00+02:00",
     )
-
-
-@pytest.yield_fixture()
-def loan_schema():
-    """Loan Json schema."""
-    yield {"$schema": "http://localhost:5000/schema/loans/loan-v1.0.0.json"}
 
 
 @pytest.fixture()
@@ -113,7 +80,7 @@ def json_headers(app):
     ]
 
 
-@pytest.yield_fixture(scope="session")
+@pytest.fixture(scope="session")
 def test_data():
     """Load test records."""
     path = "data/loans.json"
@@ -122,7 +89,7 @@ def test_data():
     yield loans
 
 
-@pytest.yield_fixture()
+@pytest.fixture()
 def test_loans(db, test_data):
     """Load test records."""
     loans = []
@@ -132,17 +99,12 @@ def test_loans(db, test_data):
     yield loans
 
 
-@pytest.yield_fixture()
-def indexer(base_app, es):
-    """Create a record indexer."""
-    yield RecordIndexer()
-
-
-@pytest.yield_fixture()
-def indexed_loans(indexer, test_loans):
+@pytest.fixture()
+def indexed_loans(es, test_loans):
     """Get a function to wait for records to be flushed to index."""
+    indexer = RecordIndexer()
     for pid, loan in test_loans:
-        indexer.index_by_id(loan.id)
+        indexer.index(loan)
     current_search.flush_and_refresh(index="loans")
 
     yield test_loans
@@ -152,7 +114,7 @@ def indexed_loans(indexer, test_loans):
     current_search.flush_and_refresh(index="loans")
 
 
-@pytest.yield_fixture()
+@pytest.fixture()
 def mock_is_item_available():
     """Mock item_available check."""
     path = "invenio_circulation.transitions.base.is_item_available"

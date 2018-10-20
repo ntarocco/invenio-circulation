@@ -11,13 +11,13 @@
 from invenio_pidstore.models import PIDStatus
 from invenio_pidstore.providers.recordid import RecordIdProvider
 
-from ..config import _CIRCULATION_LOAN_PID_TYPE
+from .pids import CIRCULATION_LOAN_PID_TYPE
 
 
 class CirculationLoanIdProvider(RecordIdProvider):
     """Record identifier provider."""
 
-    pid_type = _CIRCULATION_LOAN_PID_TYPE
+    pid_type = CIRCULATION_LOAN_PID_TYPE
     """Type of persistent identifier."""
 
     pid_provider = None

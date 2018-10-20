@@ -17,7 +17,7 @@ def test_search_loans_by_pid(indexed_loans):
     loans = list(LoansSearch.search_loans_by_pid(item_pid="item_pending_1"))
     assert loans
     assert len(loans) == 1
-    loan = Loan.get_record_by_pid(loans[0]["loanid"])
+    loan = Loan.get_record_by_pid(loans[0][Loan.pid_field])
     assert loan.get("item_pid") == "item_pending_1"
 
     loans = list(

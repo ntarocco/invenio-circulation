@@ -45,6 +45,7 @@ SPHINX-END
 from __future__ import absolute_import, print_function
 
 import os
+import uuid
 
 import click
 from flask import Flask
@@ -61,7 +62,9 @@ from invenio_search.ext import InvenioSearch
 from invenio_circulation.api import Loan
 from invenio_circulation.config import CIRCULATION_REST_ENDPOINTS
 from invenio_circulation.ext import InvenioCirculation
-from invenio_circulation.pid.minters import loan_pid_minter
+from invenio_circulation.pidstore.minters import loan_pid_minter
+from invenio_circulation.views import create_loan_actions_blueprint, \
+    create_loan_for_item_blueprint
 
 # Create Flask application
 app = Flask(__name__)
@@ -85,6 +88,8 @@ InvenioSearch(app)
 InvenioJSONSchemas(app)
 InvenioCirculation(app)
 app.register_blueprint(create_blueprint_from_app(app))
+app.register_blueprint(create_loan_actions_blueprint(app))
+app.register_blueprint(create_loan_for_item_blueprint(app))
 
 
 @app.cli.group()
@@ -95,7 +100,9 @@ def fixtures():
 @fixtures.command()
 def loans():
     """Load test data fixture."""
-    loan = Loan.create({})
-    pid = loan_pid_minter(loan.id, loan)
+    record_uuid = uuid.uuid4()
+    new_loan = {}
+    pid = loan_pid_minter(record_uuid, data=new_loan)
+    Loan.create(data=new_loan, id_=record_uuid)
     db.session.commit()
     click.secho("Loan #{} created.".format(pid.pid_value), fg="green")

@@ -16,4 +16,4 @@ from werkzeug.local import LocalProxy
 current_circulation = LocalProxy(
     lambda: current_app.extensions['invenio-circulation']
 )
-"""Helper proxy to access state object."""
+"""Helper proxy to circulation state object."""

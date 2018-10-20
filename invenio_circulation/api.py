@@ -13,12 +13,15 @@ from invenio_jsonschemas import current_jsonschemas
 from invenio_pidstore.resolver import Resolver
 from invenio_records.api import Record
 
+from .errors import MultipleLoansOnItemError
+from .pidstore.pids import CIRCULATION_LOAN_PID_TYPE
 from .search import LoansSearch
 
 
 class Loan(Record):
     """Loan record class."""
 
+    pid_field = "loan_pid"
     _schema = "loans/loan-v1.0.0.json"
 
     def __init__(self, data, model=None):
@@ -35,9 +38,8 @@ class Loan(Record):
     @classmethod
     def get_record_by_pid(cls, pid, with_deleted=False):
         """Get ils record by pid value."""
-        from .config import _CIRCULATION_LOAN_PID_TYPE
         resolver = Resolver(
-            pid_type=_CIRCULATION_LOAN_PID_TYPE,
+            pid_type=CIRCULATION_LOAN_PID_TYPE,
             object_type="rec",
             getter=cls.get_record,
         )
@@ -46,7 +48,7 @@ class Loan(Record):
 
 
 def is_item_available(item_pid):
-    """."""
+    """Return True if the given item is available for loan, False otherwise."""
     config = current_app.config
     cfg_item_available = config["CIRCULATION_POLICIES"]["checkout"].get(
         "item_available"
@@ -66,19 +68,19 @@ def is_item_available(item_pid):
 
 
 def get_pending_loans_by_item_pid(item_pid):
-    """."""
+    """Return any pending loans for the given item."""
     for result in LoansSearch.search_loans_by_pid(
         item_pid=item_pid, filter_states=["PENDING"]
     ):
-        yield Loan.get_record_by_pid(result["loanid"])
+        yield Loan.get_record_by_pid(result[Loan.pid_field])
 
 
 def get_pending_loans_by_doc_pid(document_pid):
-    """."""
+    """Return any pending loans for the given document."""
     for result in LoansSearch.search_loans_by_pid(
         document_pid=document_pid, filter_states=["PENDING"]
     ):
-        yield Loan.get_record_by_pid(result["loanid"])
+        yield Loan.get_record_by_pid(result[Loan.pid_field])
 
 
 def get_available_item_by_doc_pid(document_pid):
@@ -101,3 +103,23 @@ def get_document_by_item_pid(item_pid):
     return current_app.config["CIRCULATION_DOCUMENT_RETRIEVER_FROM_ITEM"](
         item_pid
     )
+
+
+def get_loan_for_item(item_pid):
+    """Return the Loan attached to the given item, if any."""
+    loan = None
+    if not item_pid:
+        return
+
+    hits = list(LoansSearch.search_loans_by_pid(
+        item_pid=item_pid,
+        filter_states=['ITEM_ON_LOAN',
+                       'ITEM_AT_DESK',
+                       'ITEM_IN_TRANSIT_FOR_PICKUP',
+                       'ITEM_IN_TRANSIT_TO_HOUSE']))
+    if hits:
+        if len(hits) > 1:
+            raise MultipleLoansOnItemError(
+                "Multiple active loans on item {0}".format(item_pid))
+        loan = Loan.get_record_by_pid(hits[0][Loan.pid_field])
+    return loan

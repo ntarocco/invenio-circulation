@@ -8,16 +8,16 @@
 
 """Circulation minters."""
 
-from ..config import _CIRCULATION_LOAN_PID_TYPE
+from ..api import Loan
 from .providers import CirculationLoanIdProvider
 
 
 def loan_pid_minter(record_uuid, data):
     """Mint loan identifiers."""
-    assert _CIRCULATION_LOAN_PID_TYPE not in data
+    assert Loan.pid_field not in data
     provider = CirculationLoanIdProvider.create(
         object_type='rec',
         object_uuid=record_uuid,
     )
-    data[_CIRCULATION_LOAN_PID_TYPE] = provider.pid.pid_value
+    data[Loan.pid_field] = provider.pid.pid_value
     return provider.pid

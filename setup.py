@@ -19,6 +19,7 @@ tests_require = [
     'check-manifest>=0.25',
     'coverage>=4.0',
     'isort>=4.3.3',
+    'invenio-app>=1.0.4',
     'invenio-jsonschemas>=1.0.0',
     'mock>=1.3.0',
     'pydocstyle>=1.0.0',
@@ -116,12 +117,18 @@ setup(
         'invenio_base.api_apps': [
             'invenio_circulation = invenio_circulation:InvenioCirculation'
         ],
+        'invenio_base.api_blueprints': [
+            'invenio_circulation_loan_actions = '
+            'invenio_circulation.views:create_loan_actions_blueprint',
+            'invenio_circulation_loan_for_item = '
+            'invenio_circulation.views:create_loan_for_item_blueprint',
+        ],
         'invenio_i18n.translations': ['messages = invenio_circulation'],
         'invenio_pidstore.fetchers': [
-            'loanid = invenio_circulation.pid.fetchers:loan_pid_fetcher'
+            'loanid = invenio_circulation.pidstore.fetchers:loan_pid_fetcher'
         ],
         'invenio_pidstore.minters': [
-            'loanid = invenio_circulation.pid.minters:loan_pid_minter'
+            'loanid = invenio_circulation.pidstore.minters:loan_pid_minter'
         ],
         'invenio_jsonschemas.schemas': [
             'loans = invenio_circulation.schemas'

@@ -11,7 +11,7 @@ from __future__ import absolute_import, print_function
 
 from functools import wraps
 
-from flask import abort, current_app, g
+from flask import abort, current_app
 from flask_login import current_user
 from invenio_access import action_factory
 from invenio_access.permissions import Permission
@@ -57,6 +57,8 @@ def login_required(*args, **kwargs):
 def views_permissions_factory(action):
     """Default circulation views permissions factory."""
     if action == 'loan-read-access':
+        return allow_all()
+    elif action == 'loan-actions':
         return allow_all()
 
 

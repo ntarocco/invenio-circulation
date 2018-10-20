@@ -3,72 +3,70 @@
   "title": "Schema for loan",
   "type": "object",
   "required": [
+    "loan_pid",
     "$schema",
     "state"
   ],
   "additionalProperties": false,
   "properties": {
     "$schema": {
-      "title": "Schema",
-      "description": "Schema to validate loans.",
       "type": "string",
-      "minLength": 7
+      "title": "Schema"
     },
     "extension_count": {
-      "title": "Loan extension count",
-      "type": "integer"
+      "type": "integer",
+      "title": "Loan extension count"
     },
-    "loanid": {
-      "title": "Loan ID",
-      "type": "string"
+    "loan_pid": {
+      "type": "string",
+      "title": "Loan ID"
     },
     "transaction_date": {
-      "title": "Loan date",
-      "type":"string",
-      "format":"date-time"
+      "type": "string",
+      "format": "date-time",
+      "title": "Loan date"
     },
     "patron_pid": {
-      "title": "Patron ID",
-      "type":"string"
+      "type": "string",
+      "title": "Patron ID"
     },
     "document_pid": {
-      "title": "Document ID",
-      "type":"string"
+      "type": "string",
+      "title": "Document ID"
     },
     "item_pid": {
-      "title": "Item ID",
-      "type":"string"
+      "type": "string",
+      "title": "Item ID"
     },
     "transaction_user_pid": {
-      "title": "Transaction user ID",
-      "type":"string"
+      "type": "string",
+      "title": "Transaction user ID"
     },
     "transaction_location_pid": {
-      "title": "Transaction location ID",
-      "type":"string"
+      "type": "string",
+      "title": "Transaction location ID"
     },
     "pickup_location_pid": {
-      "title": "Request pickup location ID",
-      "type":"string"
+      "type": "string",
+      "title": "Request pickup location ID"
     },
     "request_expire_date": {
-      "title": "Request expire date",
-      "type":"string",
-      "format":"date-time"
+      "type": "string",
+      "format": "date-time",
+      "title": "Request expire date"
     },
     "start_date": {
-      "title": "Transaction start date",
-      "type":"string",
-      "format":"date-time"
+      "type": "string",
+      "format": "date-time",
+      "title": "Transaction start date"
     },
     "end_date": {
-      "title": "Transaction end date",
-      "type":"string",
-      "format":"date-time"
+      "type": "string",
+      "format": "date-time",
+      "title": "Transaction end date"
     },
     "state": {
-      "title": "State name",
-      "type":"string",
+      "type": "string",
       "enum": [
         "CREATED",
         "PENDING",
@@ -78,11 +76,12 @@
         "ITEM_IN_TRANSIT_TO_HOUSE",
         "ITEM_AT_DESK",
         "CANCELLED"
-      ]
+      ],
+      "title": "State name"
     },
     "trigger": {
-      "title": "The name of the explicit action that triggered the transition to current state",
-      "type":"string"
+      "type": "string",
+      "title": "The name of the explicit action that triggered the transition to current state"
     }
   }
 }

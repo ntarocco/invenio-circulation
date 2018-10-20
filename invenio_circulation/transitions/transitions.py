@@ -8,13 +8,13 @@
 
 """Invenio Circulation custom transitions."""
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from flask import current_app
 from invenio_db import db
 
 from ..api import get_available_item_by_doc_pid, get_document_by_item_pid, \
-    get_pending_loans_by_doc_pid, is_item_available
+    get_pending_loans_by_doc_pid
 from ..errors import TransitionConditionsFailed, TransitionConstraintsViolation
 from ..transitions.base import Transition
 from ..transitions.conditions import is_same_location

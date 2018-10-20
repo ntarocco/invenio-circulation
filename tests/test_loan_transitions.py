@@ -13,13 +13,14 @@ from datetime import timedelta
 import mock
 import pytest
 from flask import current_app
-from helpers import SwappedConfig, SwappedNestedConfig
 
 from invenio_circulation.api import Loan, is_item_available
 from invenio_circulation.errors import ItemNotAvailable, \
     NoValidTransitionAvailable, TransitionConstraintsViolation
 from invenio_circulation.proxies import current_circulation
 from invenio_circulation.utils import parse_date
+
+from .helpers import SwappedConfig, SwappedNestedConfig
 
 
 @mock.patch(
@@ -424,7 +425,9 @@ def test_document_requests_on_item_returned(
             assert new_loan["state"] == "ITEM_ON_LOAN"
 
             # create a new loan request on document_pid without items available
-            new_loan_created = Loan.create({})
+            new_loan_created = Loan.create({
+                Loan.pid_field: "2"
+            })
             # remove item_pid
             params.pop("item_pid")
             pending_loan = current_circulation.circulation.trigger(

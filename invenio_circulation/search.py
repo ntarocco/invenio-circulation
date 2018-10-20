@@ -22,14 +22,9 @@ class LoansSearch(RecordsSearch):
         doc_types = None
 
     @classmethod
-    def search_loans_by_pid(
-        cls,
-        item_pid=None,
-        document_pid=None,
-        filter_states=[],
-        exclude_states=[],
-    ):
-        """."""
+    def search_loans_by_pid(cls, item_pid=None, document_pid=None,
+                            filter_states=None, exclude_states=None):
+        """Retrieve loans attached to the given item or document."""
         search = cls()
 
         if filter_states:
@@ -42,17 +37,14 @@ class LoansSearch(RecordsSearch):
             )
 
         if document_pid:
-            search = search.filter("term", document_pid=document_pid).source(
-                includes="loanid"
-            )
+            search = search.filter("term", document_pid=document_pid)
         elif item_pid:
-            search = search.filter("term", item_pid=item_pid).source(
-                includes="loanid"
-            )
+            search = search.filter("term", item_pid=item_pid)
+        else:
+            raise ValueError("Must specify item_pid or document_pid param")
 
         for result in search.scan():
-            if result.loanid:
-                yield result
+            yield result
 
     @classmethod
     def search_loans_by_patron_pid(cls, patron_pid):

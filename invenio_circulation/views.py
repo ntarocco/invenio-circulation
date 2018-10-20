@@ -8,6 +8,7 @@
 
 """Circulation views."""
 
+import logging
 from copy import deepcopy
 
 from flask import Blueprint, current_app, jsonify, request, url_for
@@ -18,15 +19,17 @@ from invenio_records_rest.views import \
 from invenio_records_rest.views import pass_record
 from invenio_rest import ContentNegotiatedMethodView
 from invenio_rest.views import create_api_errorhandler
-from werkzeug.exceptions import BadRequest
+from werkzeug.exceptions import BadRequest, InternalServerError
 
-from invenio_circulation.permissions import need_permissions
-from invenio_circulation.proxies import current_circulation
-from invenio_circulation.search import LoansSearch
-
-from .api import Loan
+from .api import get_loan_for_item
 from .errors import InvalidCirculationPermission, ItemNotAvailable, \
     LoanActionError, MultipleLoansOnItemError, NoValidTransitionAvailable
+from .permissions import need_permissions
+from .pidstore.fetchers import loan_pid_fetcher
+from .pidstore.pids import CIRCULATION_LOAN_PID_TYPE
+from .proxies import current_circulation
+
+logger = logging.getLogger(__name__)
 
 HTTP_CODES = {
     'method_not_allowed': 405,
@@ -43,7 +46,7 @@ def create_error_handlers(blueprint):
 
 
 def extract_transitions_from_app(app):
-    """."""
+    """Return all possible actions for configured transitions."""
     transitions_config = app.config.get('CIRCULATION_LOAN_TRANSITIONS', {})
     distinct_actions = set()
     for src_state, transitions in transitions_config.items():
@@ -53,19 +56,19 @@ def extract_transitions_from_app(app):
 
 
 def build_url_action_for_pid(pid, action):
-    """."""
+    """Build urls for Loan actions."""
     return url_for(
-        'invenio_circulation.{0}_actions'.format(pid.pid_type),
+        'invenio_circulation_loan_actions.{0}_actions'.format(pid.pid_type),
         pid_value=pid.pid_value,
         action=action,
         _external=True
     )
 
 
-def build_blueprint_with_loan_actions(app):
-    """."""
+def create_loan_actions_blueprint(app):
+    """Create a blueprint for Loan actions."""
     blueprint = Blueprint(
-        'invenio_circulation',
+        'invenio_circulation_loan_actions',
         __name__,
         url_prefix='',
     )
@@ -73,7 +76,7 @@ def build_blueprint_with_loan_actions(app):
     create_error_handlers(blueprint)
 
     endpoints = app.config.get('CIRCULATION_REST_ENDPOINTS', [])
-    pid_type = 'loanid'
+    pid_type = CIRCULATION_LOAN_PID_TYPE
     options = endpoints.get(pid_type, {})
     if options:
         options = deepcopy(options)
@@ -121,7 +124,7 @@ class LoanActionResource(ContentNegotiatedMethodView):
         for key, value in ctx.items():
             setattr(self, key, value)
 
-    @need_permissions('loan-read-access')
+    @need_permissions('loan-actions')
     @pass_record
     def post(self, pid, record, action, **kwargs):
         """Handle loan action."""
@@ -146,10 +149,10 @@ class LoanActionResource(ContentNegotiatedMethodView):
         )
 
 
-def build_blueprint_with_items_loan(app):
-    """Item circulation state blueprint."""
+def create_loan_for_item_blueprint(_):
+    """Create a blueprint for Loan status of Items."""
     blueprint = Blueprint(
-        'invenio_circulation_item',
+        'invenio_circulation_loan_for_item',
         __name__,
         url_prefix='',
     )
@@ -186,7 +189,7 @@ class ItemLoanResource(ContentNegotiatedMethodView):
     view_name = 'loan_resource'
 
     def __init__(self, serializers, ctx, *args, **kwargs):
-        """Resource view contructor."""
+        """Resource view constructor."""
         super(ItemLoanResource, self).__init__(serializers, *args, **kwargs)
         for key, value in ctx.items():
             setattr(self, key, value)
@@ -197,22 +200,18 @@ class ItemLoanResource(ContentNegotiatedMethodView):
         item_pid = kwargs.get('pid_value', None)
         if not item_pid:
             raise BadRequest()
-        loans = list(LoansSearch.search_loans_by_pid(
-            item_pid=item_pid,
-            filter_states=['ITEM_ON_LOAN',
-                           'ITEM_AT_DESK',
-                           'ITEM_IN_TRANSIT_FOR_PICKUP',
-                           'ITEM_IN_TRANSIT_TO_HOUSE']))
-        if loans:
-            if len(loans) > 1:
-                raise MultipleLoansOnItemError(
-                    "Multiple active loans on item {0}".format(item_pid))
-            loan = Loan.get_record_by_pid(loans[0].loanid)
 
-            from invenio_circulation.pid.fetchers import loan_pid_fetcher
+        try:
+            loan = get_loan_for_item(item_pid)
+        except MultipleLoansOnItemError as ex:
+            logger.error(ex)
+            raise InternalServerError()
+
+        if loan:
             loan_pid = loan_pid_fetcher(loan.id, loan)
             return self.make_response(
                 loan_pid, loan, 200,
                 links_factory=self.links_factory
             )
+
         return jsonify({})

@@ -10,12 +10,8 @@
 from copy import deepcopy
 from json import loads
 
-import mock
-import pytest
-from jsonschema.exceptions import ValidationError
 from pkg_resources import resource_string
 
-from invenio_circulation.api import Loan
 from invenio_circulation.proxies import current_circulation
 
 schema_in_bytes = resource_string(
@@ -24,7 +20,7 @@ schema_in_bytes = resource_string(
 
 
 def test_state_enum(app):
-    """."""
+    """Test that schema Loan states corresponds to transitions states."""
     schema = loads(schema_in_bytes.decode('utf8'))
     state_dict = schema.get('properties').get('state')
     assert 'enum' in state_dict
@@ -32,14 +28,9 @@ def test_state_enum(app):
     assert not (set(state_dict.get('enum')) - set(all_states))
 
 
-def test_state_checkout_with_loan_pid(loan_created, db, params, loan_schema,
+def test_state_checkout_with_loan_pid(loan_created, db, params,
                                       mock_is_item_available):
-    """."""
-    data = {}
-    data.update({'loanid': 'loanid'})
-    data.update(loan_schema)
-    loan_created = Loan.create(data)
-
+    """Test that created Loan validates after a checkout action."""
     new_params = deepcopy(params)
     new_params['trigger'] = 'checkout'
     loan = current_circulation.circulation.trigger(loan_created, **new_params)

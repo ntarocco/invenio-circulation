@@ -9,10 +9,12 @@
 """Tests for loan mandatory constraints."""
 
 import pytest
-from helpers import SwappedConfig
 
 from invenio_circulation.errors import TransitionConstraintsViolation
+from invenio_circulation.pidstore.fetchers import loan_pid_fetcher
 from invenio_circulation.proxies import current_circulation
+
+from .helpers import SwappedConfig
 
 
 def test_should_fail_when_missing_required_params(loan_created):
@@ -71,15 +73,16 @@ def test_should_fail_when_patron_is_changed(loan_created, db, params):
         current_circulation.circulation.trigger(loan, **dict(params))
 
 
-def test_persist_loan_parameters(
-    loan_created, db, params, mock_is_item_available
-):
+def test_persist_loan_parameters(loan_created, db, params,
+                                 mock_is_item_available):
     """Test that input params are correctly persisted."""
+    loan_pid = loan_pid_fetcher(loan_created.id, loan_created)
     loan = current_circulation.circulation.trigger(
         loan_created, **dict(params, trigger="checkout")
     )
     db.session.commit()
 
+    params["loan_pid"] = loan_pid.pid_value
     params["state"] = "ITEM_ON_LOAN"
     params["start_date"] = loan["start_date"]
     params["end_date"] = loan["end_date"]

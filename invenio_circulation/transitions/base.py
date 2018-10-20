@@ -11,11 +11,13 @@
 from datetime import datetime
 
 from flask import current_app
+from invenio_db import db
 
 from ..api import is_item_available
 from ..errors import InvalidCirculationPermission, InvalidState, \
     ItemNotAvailable, TransitionConditionsFailed, \
     TransitionConstraintsViolation
+from ..proxies import current_circulation
 from ..signals import loan_state_changed
 from ..utils import parse_date
 
@@ -138,5 +140,9 @@ class Transition(object):
         """Commit record and index."""
         loan['transaction_date'] = loan['transaction_date'].isoformat()
         loan.commit()
-        # TODO: save to db and index loan here, then broadcast the changes.
+        db.session.commit()
+
+        indexer = current_circulation.get_indexer
+        indexer.index(loan)
+
         loan_state_changed.send(self, loan=loan)

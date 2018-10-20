@@ -18,8 +18,7 @@
           "index": "not_analyzed"
         },
         "transaction_date": {
-          "type":   "date",
-          "format": "yyyy-MM-dd"
+          "type": "date"
         },
         "patron_pid": {
           "type": "string"
@@ -32,20 +31,17 @@
           "index": "not_analyzed"
         },
         "end_date": {
-          "type":   "date",
-          "format": "yyyy-MM-dd"
+          "type": "date"
         },
         "state": {
           "type": "string",
           "index": "not_analyzed"
         },
         "start_date": {
-          "type":   "date",
-          "format": "yyyy-MM-dd"
+          "type": "date"
         },
         "request_expire_date": {
-          "type":   "date",
-          "format": "yyyy-MM-dd"
+          "type": "date"
         },
         "pickup_location_pid": {
           "type": "string",

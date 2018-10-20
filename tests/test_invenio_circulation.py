@@ -12,12 +12,7 @@ from __future__ import absolute_import, print_function
 
 import json
 
-from flask import Flask, url_for
-
-from invenio_circulation import InvenioCirculation
-from invenio_circulation.api import Loan
-from invenio_circulation.pid.fetchers import loan_pid_fetcher
-from invenio_circulation.pid.minters import loan_pid_minter
+from flask import url_for
 
 
 def test_version():
