@@ -136,5 +136,8 @@ CIRCULATION_REST_ENDPOINTS = dict(
 )
 """REST endpoint configuration for circulation APIs."""
 
+CIRCULATION_LOAN_LINKS_FACTORY = loan_links_factory
+"""Links factory for Loan record."""
+
 CIRCULATION_VIEWS_PERMISSIONS_FACTORY = views_permissions_factory
 """Permissions factory for circulation views to handle actions."""

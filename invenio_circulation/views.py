@@ -149,7 +149,7 @@ class LoanActionResource(ContentNegotiatedMethodView):
         )
 
 
-def create_loan_for_item_blueprint(_):
+def create_loan_for_item_blueprint(app):
     """Create a blueprint for Loan status of Items."""
     blueprint = Blueprint(
         'invenio_circulation_loan_for_item',
@@ -169,7 +169,7 @@ def create_loan_for_item_blueprint(_):
         for mime, func in rec_serializers.items()
     }
 
-    from invenio_circulation.links import loan_links_factory
+    loan_links_factory = app.config.get('CIRCULATION_LOAN_LINKS_FACTORY')
     loan_request = ItemLoanResource.as_view(
         ItemLoanResource.view_name, serializers=serializers,
         ctx=dict(links_factory=loan_links_factory),

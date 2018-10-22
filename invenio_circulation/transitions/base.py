@@ -141,8 +141,6 @@ class Transition(object):
         loan['transaction_date'] = loan['transaction_date'].isoformat()
         loan.commit()
         db.session.commit()
-
-        indexer = current_circulation.get_indexer
-        indexer.index(loan)
+        current_circulation.loan_indexer.index(loan)
 
         loan_state_changed.send(self, loan=loan)

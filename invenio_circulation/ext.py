@@ -64,7 +64,7 @@ class InvenioCirculation(object):
         )
 
     @cached_property
-    def get_indexer(self):
+    def loan_indexer(self):
         """Return a Loan indexer instance."""
         endpoints = self.app.config.get('CIRCULATION_REST_ENDPOINTS', [])
         pid_type = CIRCULATION_LOAN_PID_TYPE
