@@ -8,6 +8,7 @@
 
 """Circulation search API."""
 
+from elasticsearch_dsl import VERSION as ES_VERSION
 from invenio_search.api import RecordsSearch
 
 from ..proxies import current_circulation
@@ -21,6 +22,14 @@ class LoansSearch(RecordsSearch):
 
         index = "loans"
         doc_types = None
+
+    def exclude(self, *args, **kwargs):
+        """Add method `exclude` to old elastic search versions."""
+        if ES_VERSION[0] == 2:
+            from elasticsearch_dsl.query import Bool, Q
+            return self.query(Bool(filter=[~Q(*args, **kwargs)]))
+        else:
+            return super(LoansSearch, self).exclude(*args, **kwargs)
 
 
 def search_by_pid(item_pid=None, document_pid=None, filter_states=None,
