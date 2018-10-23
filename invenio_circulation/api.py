@@ -13,9 +13,9 @@ from invenio_jsonschemas import current_jsonschemas
 from invenio_pidstore.resolver import Resolver
 from invenio_records.api import Record
 
-from .errors import MultipleLoansOnItemError
+from .errors import CirculationException, MultipleLoansOnItemError
 from .pidstore.pids import CIRCULATION_LOAN_PID_TYPE
-from .search import LoansSearch
+from .search.api import search_by_patron_item, search_by_pid
 
 
 class Loan(Record):
@@ -56,30 +56,23 @@ def is_item_available(item_pid):
     if not cfg_item_available(item_pid):
         return False
 
-    if any(
-        True
-        for loan in LoansSearch.search_loans_by_pid(
-            item_pid=item_pid,
-            exclude_states=config.get("CIRCULATION_STATES_ITEM_AVAILABLE"),
-        )
-    ):
-        return False
-    return True
+    search = search_by_pid(item_pid=item_pid, exclude_states=config.get(
+        "CIRCULATION_STATES_ITEM_AVAILABLE"))
+    return search.execute().hits.total == 0
 
 
 def get_pending_loans_by_item_pid(item_pid):
     """Return any pending loans for the given item."""
-    for result in LoansSearch.search_loans_by_pid(
-        item_pid=item_pid, filter_states=["PENDING"]
-    ):
+    search = search_by_pid(item_pid=item_pid, filter_states=["PENDING"])
+    for result in search.scan():
         yield Loan.get_record_by_pid(result[Loan.pid_field])
 
 
 def get_pending_loans_by_doc_pid(document_pid):
     """Return any pending loans for the given document."""
-    for result in LoansSearch.search_loans_by_pid(
-        document_pid=document_pid, filter_states=["PENDING"]
-    ):
+    search = search_by_pid(document_pid=document_pid,
+                           filter_states=["PENDING"])
+    for result in search.scan():
         yield Loan.get_record_by_pid(result[Loan.pid_field])
 
 
@@ -111,15 +104,42 @@ def get_loan_for_item(item_pid):
     if not item_pid:
         return
 
-    hits = list(LoansSearch.search_loans_by_pid(
+    search = search_by_pid(
         item_pid=item_pid,
-        filter_states=['ITEM_ON_LOAN',
-                       'ITEM_AT_DESK',
-                       'ITEM_IN_TRANSIT_FOR_PICKUP',
-                       'ITEM_IN_TRANSIT_TO_HOUSE']))
+        filter_states=[
+            'ITEM_ON_LOAN',
+            'ITEM_AT_DESK',
+            'ITEM_IN_TRANSIT_FOR_PICKUP',
+            'ITEM_IN_TRANSIT_TO_HOUSE'
+        ]
+    )
+
+    hits = list(search.scan())
     if hits:
         if len(hits) > 1:
             raise MultipleLoansOnItemError(
-                "Multiple active loans on item {0}".format(item_pid))
+                    "Multiple active loans on item {0}".format(item_pid))
+
         loan = Loan.get_record_by_pid(hits[0][Loan.pid_field])
     return loan
+
+
+def patron_has_active_loan_on_item(patron_pid, item_pid):
+    """Return True if patron has a pending or active Loan for given item."""
+    if not patron_pid or not item_pid:
+        raise CirculationException("Patron PID or Item PID not specified")
+
+    search = search_by_patron_item(
+        patron_pid=patron_pid,
+        item_pid=item_pid,
+        filter_states=[
+            'CREATED',
+            'PENDING',
+            'ITEM_ON_LOAN',
+            'ITEM_AT_DESK',
+            'ITEM_IN_TRANSIT_FOR_PICKUP',
+            'ITEM_IN_TRANSIT_TO_HOUSE'
+            'ITEM_ON_LOAN'
+        ])
+    search_result = search.execute()
+    return search_result.hits.total > 0

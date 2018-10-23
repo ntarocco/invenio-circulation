@@ -14,12 +14,14 @@ from copy import deepcopy
 
 from flask import current_app
 from invenio_indexer.api import RecordIndexer
+from invenio_records_rest.utils import obj_or_import_string
 from werkzeug.utils import cached_property
 
 from . import config
 from .errors import InvalidState, NoValidTransitionAvailable, \
     TransitionConditionsFailed
 from .pidstore.pids import CIRCULATION_LOAN_PID_TYPE
+from .search.api import LoansSearch
 from .transitions.base import Transition
 
 
@@ -63,13 +65,25 @@ class InvenioCirculation(object):
             )
         )
 
-    @cached_property
-    def loan_indexer(self):
-        """Return a Loan indexer instance."""
+    def _get_endpoint_config(self):
+        """Return endpoint configuration for circulation."""
         endpoints = self.app.config.get('CIRCULATION_REST_ENDPOINTS', [])
         pid_type = CIRCULATION_LOAN_PID_TYPE
-        _cls = endpoints.get(pid_type, {}).get('indexer_class', RecordIndexer)
-        return _cls()
+        return endpoints.get(pid_type, {})
+
+    @cached_property
+    def loan_search(self):
+        """Return the current Loan search instance."""
+        circ_endpoint = self._get_endpoint_config()
+        _cls = circ_endpoint.get('search_class', LoansSearch)
+        return obj_or_import_string(_cls)()
+
+    @cached_property
+    def loan_indexer(self):
+        """Return the current Loan indexer instance."""
+        circ_endpoint = self._get_endpoint_config()
+        _cls = circ_endpoint.get('indexer_class', RecordIndexer)
+        return obj_or_import_string(_cls)()
 
 
 class _Circulation(object):

@@ -15,7 +15,7 @@ from .links import loan_links_factory
 from .permissions import views_permissions_factory
 from .pidstore.pids import CIRCULATION_LOAN_FETCHER, CIRCULATION_LOAN_MINTER, \
     CIRCULATION_LOAN_PID_TYPE
-from .search import LoansSearch
+from .search.api import LoansSearch
 from .transitions.transitions import CreatedToItemOnLoan, CreatedToPending, \
     ItemAtDeskToItemOnLoan, ItemInTransitHouseToItemReturned, \
     ItemOnLoanToItemInTransitHouse, ItemOnLoanToItemOnLoan, \

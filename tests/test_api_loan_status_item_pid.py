@@ -12,7 +12,7 @@ import pytest
 from invenio_indexer.api import RecordIndexer
 from invenio_search import current_search
 
-from invenio_circulation.api import Loan, get_loan_for_item
+from invenio_circulation.api import get_loan_for_item
 from invenio_circulation.errors import MultipleLoansOnItemError
 
 from .helpers import create_loan

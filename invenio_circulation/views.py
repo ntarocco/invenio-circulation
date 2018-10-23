@@ -22,8 +22,9 @@ from invenio_rest.views import create_api_errorhandler
 from werkzeug.exceptions import BadRequest, InternalServerError
 
 from .api import get_loan_for_item
-from .errors import InvalidCirculationPermission, ItemNotAvailable, \
-    LoanActionError, MultipleLoansOnItemError, NoValidTransitionAvailable
+from .errors import CirculationException, InvalidCirculationPermission, \
+    ItemNotAvailable, LoanActionError, MultipleLoansOnItemError, \
+    NoValidTransitionAvailable
 from .permissions import need_permissions
 from .pidstore.fetchers import loan_pid_fetcher
 from .pidstore.pids import CIRCULATION_LOAN_PID_TYPE
@@ -39,7 +40,7 @@ HTTP_CODES = {
 
 def create_error_handlers(blueprint):
     """Create error handlers on blueprint."""
-    blueprint.errorhandler(LoanActionError)(create_api_errorhandler(
+    blueprint.errorhandler(CirculationException)(create_api_errorhandler(
         status=HTTP_CODES['method_not_allowed'], message='Invalid loan action'
     ))
     records_rest_error_handlers(blueprint)

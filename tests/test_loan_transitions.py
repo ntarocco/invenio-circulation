@@ -305,8 +305,8 @@ def test_checkin_end_date_is_transaction_date(
         assert loan["end_date"] == params["transaction_date"]
 
 
-def test_item_availibility(indexed_loans):
-    """Test item_availibility with various conditions."""
+def test_item_availability(indexed_loans):
+    """Test item_availability with various conditions."""
     assert not is_item_available(item_pid="item_pending_1")
     assert not is_item_available(item_pid="item_on_loan_2")
     assert is_item_available(item_pid="item_returned_3")

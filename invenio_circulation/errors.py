@@ -13,7 +13,7 @@ class CirculationException(Exception):
     """Exceptions raised by circulation module."""
 
     def __init__(self, msg):
-        """."""
+        """Constructor."""
         self.msg = msg
 
 
@@ -34,7 +34,7 @@ class NoValidTransitionAvailable(CirculationException):
 
 
 class LoanActionError(CirculationException):
-    """."""
+    """Exception raised when invalid action triggered on a loan."""
 
 
 class InvalidCirculationPermission(CirculationException):
