@@ -33,7 +33,7 @@ from .proxies import current_circulation
 logger = logging.getLogger(__name__)
 
 HTTP_CODES = {
-    'method_not_allowed': 405,
+    'bad_request': 400,
     'accepted': 202,
 }
 
@@ -41,7 +41,7 @@ HTTP_CODES = {
 def create_error_handlers(blueprint):
     """Create error handlers on blueprint."""
     blueprint.errorhandler(CirculationException)(create_api_errorhandler(
-        status=HTTP_CODES['method_not_allowed'], message='Invalid loan action'
+        status=HTTP_CODES['bad_request'], message='Invalid loan action'
     ))
     records_rest_error_handlers(blueprint)
 

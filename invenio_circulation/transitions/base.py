@@ -103,11 +103,14 @@ class Transition(object):
 
     def ensure_item_is_available(self, loan):
         """Validate that an item is available."""
+        if 'item_pid' not in loan:
+            msg = 'Item not set for loan'.format(loan['loan_pid'])
+            raise TransitionConstraintsViolation(msg=msg)
+
         if not is_item_available(loan['item_pid']):
-                raise ItemNotAvailable(
-                    msg='Invalid transition to {0}: Item {1} is unavailable.'
-                        .format(self.dest, loan['item_pid'])
-                )
+            msg = 'Invalid transition to {0}: Item {1} is unavailable.'\
+                .format(self.dest, loan['item_pid'])
+            raise ItemNotAvailable(msg)
 
     def validate_transition_states(self):
         """Ensure that source and destination states are valid."""
@@ -117,9 +120,9 @@ class Transition(object):
                 .format(self.src, self.dest, states)
             raise InvalidState(msg=msg)
 
-    @ensure_same_item_patron
-    @ensure_required_params
     @check_trigger
+    @ensure_required_params
+    @ensure_same_item_patron
     def before(self, loan, **kwargs):
         """Validate input, evaluate conditions and raise if failed."""
         if self.permission_factory and not self.permission_factory(loan).can():

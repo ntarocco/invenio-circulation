@@ -16,11 +16,10 @@ from .permissions import views_permissions_factory
 from .pidstore.pids import CIRCULATION_LOAN_FETCHER, CIRCULATION_LOAN_MINTER, \
     CIRCULATION_LOAN_PID_TYPE
 from .search.api import LoansSearch
-from .transitions.transitions import CreatedToItemOnLoan, CreatedToPending, \
-    ItemAtDeskToItemOnLoan, ItemInTransitHouseToItemReturned, \
-    ItemOnLoanToItemInTransitHouse, ItemOnLoanToItemOnLoan, \
-    ItemOnLoanToItemReturned, PendingToItemAtDesk, \
-    PendingToItemInTransitPickup
+from .transitions.transitions import CreatedToPending, \
+    ItemInTransitHouseToItemReturned, ItemOnLoanToItemInTransitHouse, \
+    ItemOnLoanToItemOnLoan, ItemOnLoanToItemReturned, PendingToItemAtDesk, \
+    PendingToItemInTransitPickup, ToItemOnLoan
 from .utils import get_default_extension_duration, \
     get_default_extension_max_count, get_default_loan_duration, \
     is_item_available, is_loan_duration_valid, item_exists, \
@@ -48,17 +47,17 @@ CIRCULATION_LOAN_TRANSITIONS_DEFAULT_PERMISSION_FACTORY = allow_all
 CIRCULATION_LOAN_TRANSITIONS = {
     'CREATED': [
         dict(dest='PENDING', trigger='request', transition=CreatedToPending),
-        dict(dest='ITEM_ON_LOAN', trigger='checkout',
-             transition=CreatedToItemOnLoan)
+        dict(dest='ITEM_ON_LOAN', trigger='checkout', transition=ToItemOnLoan)
     ],
     'PENDING': [
         dict(dest='ITEM_AT_DESK', transition=PendingToItemAtDesk),
         dict(dest='ITEM_IN_TRANSIT_FOR_PICKUP',
              transition=PendingToItemInTransitPickup),
+        dict(dest='ITEM_ON_LOAN', trigger='checkout', transition=ToItemOnLoan),
         dict(dest='CANCELLED', trigger='cancel')
     ],
     'ITEM_AT_DESK': [
-        dict(dest='ITEM_ON_LOAN', transition=ItemAtDeskToItemOnLoan),
+        dict(dest='ITEM_ON_LOAN', transition=ToItemOnLoan),
         dict(dest='CANCELLED', trigger='cancel')
     ],
     'ITEM_IN_TRANSIT_FOR_PICKUP': [

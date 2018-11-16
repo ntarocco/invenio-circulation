@@ -87,6 +87,29 @@ def _ensure_valid_extension(loan):
     loan['end_date'] = end_date.isoformat()
 
 
+class ToItemOnLoan(Transition):
+    """Action to checkout."""
+
+    def before(self, loan, **kwargs):
+        """Validate checkout action."""
+        super(ToItemOnLoan, self).before(loan, **kwargs)
+
+        self.ensure_item_is_available(loan)
+
+        if loan.get('start_date'):
+            loan['start_date'] = parse_date(loan['start_date'])
+        if loan.get('end_date'):
+            loan['end_date'] = parse_date(loan['end_date'])
+
+        _ensure_valid_loan_duration(loan)
+
+    def after(self, loan):
+        """Convert dates to string before saving loan."""
+        loan['start_date'] = loan['start_date'].isoformat()
+        loan['end_date'] = loan['end_date'].isoformat()
+        super(ToItemOnLoan, self).after(loan)
+
+
 class CreatedToPending(Transition):
     """Action to request to loan an item."""
 
@@ -113,29 +136,6 @@ class CreatedToPending(Transition):
             item_location_pid = current_app.config[
                 'CIRCULATION_ITEM_LOCATION_RETRIEVER'](loan['item_pid'])
             loan['pickup_location_pid'] = item_location_pid
-
-
-class CreatedToItemOnLoan(Transition):
-    """Checkout action to perform a direct loan without a request."""
-
-    def before(self, loan, **kwargs):
-        """Validate checkout action."""
-        super(CreatedToItemOnLoan, self).before(loan, **kwargs)
-
-        self.ensure_item_is_available(loan)
-
-        if loan.get('start_date'):
-            loan['start_date'] = parse_date(loan['start_date'])
-        if loan.get('end_date'):
-            loan['end_date'] = parse_date(loan['end_date'])
-
-        _ensure_valid_loan_duration(loan)
-
-    def after(self, loan):
-        """Convert dates to string before saving loan."""
-        loan['start_date'] = loan['start_date'].isoformat()
-        loan['end_date'] = loan['end_date'].isoformat()
-        super(CreatedToItemOnLoan, self).after(loan)
 
 
 class PendingToItemAtDesk(Transition):
@@ -170,38 +170,13 @@ class PendingToItemInTransitPickup(Transition):
                     .format(self.dest))
 
 
-class ItemAtDeskToItemOnLoan(Transition):
-    """Check-out action to perform a loan when item ready at desk."""
-
-    def before(self, loan, **kwargs):
-        """Validate checkout action."""
-        super(ItemAtDeskToItemOnLoan, self).before(loan, **kwargs)
-
-        if loan.get('start_date'):
-            loan['start_date'] = parse_date(loan['start_date'])
-        if loan.get('end_date'):
-            loan['end_date'] = parse_date(loan['end_date'])
-        _ensure_valid_loan_duration(loan)
-
-    def after(self, loan):
-        """Convert dates to string before saving loan."""
-        loan['start_date'] = loan['start_date'].isoformat()
-        loan['end_date'] = loan['end_date'].isoformat()
-        super(ItemAtDeskToItemOnLoan, self).after(loan)
-
-
 class ItemOnLoanToItemOnLoan(Transition):
     """Extend action to perform a item loan extension."""
 
     def before(self, loan, **kwargs):
         """Validate extension action."""
         super(ItemOnLoanToItemOnLoan, self).before(loan, **kwargs)
-
         _ensure_valid_extension(loan)
-
-    def after(self, loan):
-        """."""
-        super(ItemOnLoanToItemOnLoan, self).after(loan)
 
 
 class ItemOnLoanToItemInTransitHouse(Transition):

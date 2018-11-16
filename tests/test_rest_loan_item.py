@@ -97,6 +97,6 @@ def test_rest_loan_invalid_action(app, json_headers, params,
     loan_pid = loan_pid_fetcher(loan.id, loan)
 
     res, payload = _post(app, json_headers, params,
-                         pid_value=loan_pid.pid_value, action='checkout')
-    assert res.status_code == HTTP_CODES['method_not_allowed']
+                         pid_value=loan_pid.pid_value, action='extend')
+    assert res.status_code == HTTP_CODES['bad_request']
     assert 'message' in payload
