@@ -96,6 +96,9 @@ app.register_blueprint(create_loan_replace_item_blueprint(app))
 app.config["CIRCULATION_ITEM_REF_BUILDER"] = lambda loan_pid: {
     "ref": "{}".format(loan_pid)
 }
+app.config["CIRCULATION_PATRON_REF_BUILDER"] = lambda loan_pid: {
+    "ref": "{}".format(loan_pid)
+}
 
 
 @app.cli.group()

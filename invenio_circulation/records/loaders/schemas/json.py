@@ -8,6 +8,7 @@
 
 """Circulation record loaders JSON schemas."""
 
+from datetime import date, datetime
 
 import arrow
 from flask_babelex import lazy_gettext as _
@@ -19,10 +20,10 @@ from marshmallow import ValidationError, fields
 class DateTimeString(fields.DateTime):
     """Custom DateTime field to return a string representation."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, **kwargs):
         """Constructor."""
         kwargs.setdefault('validate', self.validate_timezone)
-        super().__init__(*args, **kwargs)
+        super().__init__(**kwargs)
 
     def validate_timezone(self, value):
         """Validate that the passed timezone, if any, is UTC."""
@@ -33,10 +34,13 @@ class DateTimeString(fields.DateTime):
 
     def deserialize(self, value, attr=None, data=None, **kwargs):
         """Validate ISO8601 datetime input but return the string value."""
-        super().deserialize(value, attr, data, **kwargs)
-        # return the original string value after marshmallow validation
+        # value and _value can be <marshmallow.missing>
+        _value = super().deserialize(value, attr, data, **kwargs)
+        # return the value as string after marshmallow validation
         # because Invenio does not support Python datetime JSON serializer yet
-        return value
+        if _value and type(_value) == datetime:
+            return _value.isoformat()
+        return _value
 
 
 class DateString(fields.Date):
@@ -44,10 +48,13 @@ class DateString(fields.Date):
 
     def deserialize(self, value, attr=None, data=None, **kwargs):
         """Validate ISO8601 date input but return the string value."""
-        super().deserialize(value, attr, data, **kwargs)
-        # return the original string value after marshmallow validation
+        # value and _value can be <marshmallow.missing>
+        _value = super().deserialize(value, attr, data, **kwargs)
+        # return the value as string after marshmallow validation
         # because Invenio does not support Python datetime JSON serializer yet
-        return value
+        if _value and type(_value) == date:
+            return _value.isoformat()
+        return _value
 
 
 class LoanSchemaV1(RecordMetadataSchemaJSONV1):

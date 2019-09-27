@@ -48,6 +48,14 @@
       "title": "Patron ID",
       "type": "string"
     },
+    "patron": {
+      "properties": {
+        "$ref": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "pickup_location_pid": {
       "title": "Request pickup location ID",
       "type": "string"

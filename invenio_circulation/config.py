@@ -24,7 +24,8 @@ from .transitions.transitions import CreatedToPending, \
 from .utils import can_be_requested, document_exists, \
     get_default_extension_duration, get_default_extension_max_count, \
     get_default_loan_duration, is_loan_duration_valid, item_can_circulate, \
-    item_exists, item_location_retriever, item_ref_builder, patron_exists
+    item_exists, item_location_retriever, item_ref_builder, patron_exists, \
+    patron_ref_builder
 
 CIRCULATION_ITEMS_RETRIEVER_FROM_DOCUMENT = None
 """Function that returns a list of item PIDs given a Document PID."""
@@ -107,17 +108,27 @@ CIRCULATION_ITEM_EXISTS = item_exists
 CIRCULATION_DOCUMENT_EXISTS = document_exists
 """Function that returns True if the given Document exists."""
 
-CIRCULATION_ITEM_REF_BUILDER = item_ref_builder
-"""Function that builds $ref to an `Item` record."""
-
 CIRCULATION_ITEM_LOCATION_RETRIEVER = item_location_retriever
 """Function that returns the Location PID of the given Item."""
+
+# JSON Schema resolvers
+CIRCULATION_ITEM_REF_BUILDER = item_ref_builder
+"""Function that builds $ref to an `Item` record."""
 
 CIRCULATION_ITEM_RESOLVING_PATH = ""
 """Path to use for the resolving of the item ref."""
 
 CIRCULATION_ITEM_RESOLVER_ENDPOINT = None
 """Flask endpoint function to handle the item resolving."""
+
+CIRCULATION_PATRON_REF_BUILDER = patron_ref_builder
+"""Function that builds $ref to a `Patron` record."""
+
+CIRCULATION_PATRON_RESOLVING_PATH = ""
+"""Path to use for the resolving of the patron ref."""
+
+CIRCULATION_PATRON_RESOLVER_ENDPOINT = None
+"""Flask endpoint function to handle the patron resolving."""
 
 CIRCULATION_POLICIES = dict(
     checkout=dict(

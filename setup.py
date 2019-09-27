@@ -136,7 +136,8 @@ setup(
         ],
         'invenio_search.mappings': ['loans = invenio_circulation.mappings'],
         "invenio_records.jsonresolver": [
-            "ils_item = invenio_circulation.records.jsonresolver.item",
+            "item_resolver = invenio_circulation.records.jsonresolver.item",
+            "patron_resolver = invenio_circulation.records.jsonresolver.patron",
         ],
     },
     extras_require=extras_require,

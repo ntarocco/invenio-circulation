@@ -43,6 +43,14 @@ def item_ref_builder(loan_pid):
     )
 
 
+# NOTE: Its on purpose `ref` and not `$ref` so it doesn't try to resolve
+def patron_ref_builder(patron_pid):
+    """Return the $ref for patron_pid."""
+    raise NotImplementedConfigurationError(
+        config_variable="CIRCULATION_PATRON_REF_BUILDER"
+    )
+
+
 def item_location_retriever(item_pid):
     """Retrieve the location pid of the passed item pid."""
     raise NotImplementedConfigurationError(
