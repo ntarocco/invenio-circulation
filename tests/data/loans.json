@@ -2,7 +2,10 @@
   {
     "state": "CREATED"
   }, {
-    "item_pid": "item_pending_1",
+    "item_pid": {
+      "type": "itemid",
+      "value": "item_pending_1"
+    },
     "patron_pid": "1",
     "state": "PENDING",
     "transaction_date": "2018-07-24T09:00:00.442118+00:00",
@@ -12,7 +15,10 @@
     "request_start_date": "2018-08-15",
     "request_expire_date": "2018-08-23"
 }, {
-    "item_pid": "item_on_loan_2",
+    "item_pid": {
+      "type": "itemid",
+      "value": "item_on_loan_2"
+    },
     "patron_pid": "1",
     "state": "ITEM_ON_LOAN",
     "transaction_date": "2018-07-24T09:00:00.442118+00:00",
@@ -21,7 +27,10 @@
     "start_date": "2018-07-24",
     "end_date": "2018-08-23"
 }, {
-    "item_pid": "item_returned_3",
+    "item_pid": {
+      "type": "itemid",
+      "value": "item_returned_3"
+    },
     "patron_pid": "1",
     "state": "ITEM_RETURNED",
     "transaction_date": "2018-07-24T09:00:00.442118+00:00",
@@ -29,14 +38,20 @@
     "transaction_user_pid": "user_pid",
     "end_date": "2018-08-23"
 }, {
-    "item_pid": "item_in_transit_4",
+    "item_pid": {
+      "type": "itemid",
+      "value": "item_in_transit_4"
+    },
     "patron_pid": "1",
     "state": "ITEM_IN_TRANSIT_TO_HOUSE",
     "transaction_date": "2018-07-24T09:00:00.442118+00:00",
     "transaction_location_pid": "loc_pid",
     "transaction_user_pid": "user_pid"
   }, {
-    "item_pid": "item_at_desk_5",
+    "item_pid": {
+      "type": "itemid",
+      "value": "item_at_desk_5"
+    },
     "patron_pid": "1",
     "state": "ITEM_AT_DESK",
     "transaction_date": "2018-07-24T09:00:00.442118+00:00",
@@ -46,7 +61,10 @@
     "request_start_date": "2018-08-15",
     "request_expire_date": "2018-08-23"
 }, {
-    "item_pid": "item_returned_6",
+    "item_pid": {
+      "type": "itemid",
+      "value": "item_returned_6"
+    },
     "patron_pid": "1",
     "state": "ITEM_RETURNED",
     "transaction_date": "2018-07-24T09:00:00.442118+00:00",
@@ -54,7 +72,10 @@
     "transaction_user_pid": "user_pid",
     "end_date": "2018-08-23"
 }, {
-    "item_pid": "item_returned_6",
+    "item_pid": {
+      "type": "itemid",
+      "value": "item_returned_6"
+    },
     "patron_pid": "2",
     "state": "ITEM_RETURNED",
     "transaction_date": "2018-06-24T09:00:00.442118+00:00",
@@ -62,7 +83,10 @@
     "transaction_user_pid": "user_pid",
     "end_date": "2018-07-23"
 }, {
-    "item_pid": "item_pending_on_loan_6",
+    "item_pid": {
+      "type": "itemid",
+      "value": "item_pending_on_loan_6"
+    },
     "patron_pid": "1",
     "state": "PENDING",
     "transaction_date": "2018-06-24T09:00:00.442118+00:00",
@@ -73,7 +97,10 @@
     "request_start_date": "2018-08-15",
     "request_expire_date": "2018-08-23"
 }, {
-    "item_pid": "item_pending_on_loan_6",
+    "item_pid": {
+      "type": "itemid",
+      "value": "item_pending_on_loan_6"
+    },
     "patron_pid": "2",
     "state": "ITEM_ON_LOAN",
     "transaction_date": "2018-06-26T09:00:00.442118+00:00",
@@ -82,7 +109,10 @@
     "start_date": "2018-07-24",
     "end_date": "2018-08-23"
 }, {
-    "item_pid": "item_multiple_pending_on_loan_7",
+    "item_pid": {
+      "type": "itemid",
+      "value": "item_multiple_pending_on_loan_7"
+    },
     "patron_pid": "1",
     "state": "PENDING",
     "transaction_date": "2018-06-24T09:00:00.442118+00:00",
@@ -92,7 +122,10 @@
     "request_start_date": "2018-08-15",
     "request_expire_date": "2018-07-23"
 }, {
-    "item_pid": "item_multiple_pending_on_loan_7",
+    "item_pid": {
+      "type": "itemid",
+      "value": "item_multiple_pending_on_loan_7"
+    },
     "patron_pid": "2",
     "state": "ITEM_ON_LOAN",
     "transaction_date": "2018-06-26T09:00:00.442118+00:00",
@@ -101,7 +134,10 @@
     "start_date": "2018-07-24",
     "end_date": "2018-08-23"
 }, {
-    "item_pid": "item_multiple_pending_on_loan_7",
+    "item_pid": {
+      "type": "itemid",
+      "value": "item_multiple_pending_on_loan_7"
+    },
     "patron_pid": "3",
     "state": "PENDING",
     "transaction_date": "2018-06-29T09:00:00.442118+00:00",

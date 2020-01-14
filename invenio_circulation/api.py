@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2018-2019 CERN.
-# Copyright (C) 2018-2019 RERO.
+# Copyright (C) 2018-2020 CERN.
+# Copyright (C) 2018-2020 RERO.
 #
 # Invenio-Circulation is free software; you can redistribute it and/or modify
 # it under the terms of the MIT License; see LICENSE file for more details.
@@ -35,30 +35,38 @@ class Loan(Record):
 
     def __init__(self, data, model=None):
         """Constructor."""
-        self.item_ref_builder = current_app.config.get(
-            "CIRCULATION_ITEM_REF_BUILDER"
-        )
+        self.item_ref_builder = current_app.config[
+            "CIRCULATION_ITEM_REF_BUILDER"]
         self["state"] = current_app.config["CIRCULATION_LOAN_INITIAL_STATE"]
         super().__init__(data, model)
+
+    @classmethod
+    def build_resolver_fields(cls, data):
+        """Build all resolver fields."""
+        item_ref = current_app.config["CIRCULATION_ITEM_REF_BUILDER"]
+        data["item"] = item_ref(data["pid"], data)
+        patron_ref = current_app.config["CIRCULATION_PATRON_REF_BUILDER"]
+        data["patron"] = patron_ref(data["pid"], data)
+        document_ref = current_app.config["CIRCULATION_DOCUMENT_REF_BUILDER"]
+        data["document"] = document_ref(data["pid"], data)
 
     @classmethod
     def create(cls, data, id_=None, **kwargs):
         """Create Loan record."""
         data["$schema"] = current_jsonschemas.path_to_url(cls._schema)
-        item_ref_builder = current_app.config.get(
-            "CIRCULATION_ITEM_REF_BUILDER")
-        data["item"] = item_ref_builder(data["pid"])
-        patron_ref_builder = current_app.config.get(
-            "CIRCULATION_PATRON_REF_BUILDER")
-        data["patron"] = patron_ref_builder(data["pid"])
-        document_ref_builder = current_app.config.get(
-            "CIRCULATION_DOCUMENT_REF_BUILDER")
-        data["document"] = document_ref_builder(data["pid"])
-        item_pid = data.get("item_pid")
-        if item_pid:
-            data["document_pid"] = get_document_pid_by_item_pid(item_pid)
+        cls.build_resolver_fields(data)
+
+        # resolve document if `item_pid` provided
+        if data.get("item_pid"):
+            data["document_pid"] = get_document_pid_by_item_pid(
+                data["item_pid"])
 
         return super().create(data, id_=id_, **kwargs)
+
+    def update(self, *args, **kwargs):
+        """Update Loan record."""
+        super().update(*args, **kwargs)
+        self.build_resolver_fields(self)
 
     def date_fields2datetime(self):
         """Convert string datetime fields to Python datetime."""
@@ -83,33 +91,29 @@ class Loan(Record):
             object_type="rec",
             getter=cls.get_record,
         )
-        persistent_identifier, record = resolver.resolve(str(pid))
+        _, record = resolver.resolve(str(pid))
         return record
 
-    def attach_item_ref(self):
-        """Attach item reference."""
-        item_pid = self.get("item_pid")
-        if not item_pid:
-            msg = "Missing required field 'item_pid' in loan '{}'"
-            raise MissingRequiredParameterError(
-                description=msg.format(self["pid"])
-            )
-        if self.item_ref_builder:
-            self["item"] = self.item_ref_builder(self["pid"])
+    def update_item_ref(self, item_pid):
+        """Replace item reference.
 
-    def update_item_ref(self, new_item_pid):
-        """Replace item reference."""
-        if not new_item_pid:
+        :param item_pid: a dict containing `value` and `type` fields to
+            uniquely identify the item.
+        """
+        if not item_pid:
             msg = "Missing required arg 'item_pid' when updating loan '{}'"
             raise MissingRequiredParameterError(
                 description=msg.format(self["pid"])
             )
-        self["item_pid"] = new_item_pid
-        self.attach_item_ref()
+        self["item_pid"] = item_pid
 
 
 def is_item_available_for_checkout(item_pid):
-    """Return True if the given item is available for loan, False otherwise."""
+    """Return True if the given item is available for loan, False otherwise.
+
+    :param item_pid: a dict containing `value` and `type` fields to
+        uniquely identify the item.
+    """
     config = current_app.config
     cfg_item_can_circulate = config["CIRCULATION_POLICIES"]["checkout"].get(
         "item_can_circulate"
@@ -138,12 +142,14 @@ def can_be_requested(loan):
 
 
 def get_pending_loans_by_item_pid(item_pid):
-    """Return any pending loans for the given item."""
+    """Return any pending loans for the given item.
+
+    :param item_pid: a dict containing `value` and `type` fields to
+        uniquely identify the item.
+    """
     search = search_by_pid(
         item_pid=item_pid,
-        filter_states=current_app.config.get(
-            "CIRCULATION_STATES_LOAN_REQUEST"
-        ),
+        filter_states=current_app.config["CIRCULATION_STATES_LOAN_REQUEST"]
     )
     for result in search.scan():
         yield Loan.get_record_by_pid(result["pid"])
@@ -170,7 +176,7 @@ def get_available_item_by_doc_pid(document_pid):
 
 
 def get_items_by_doc_pid(document_pid):
-    """Return a list of item pids for this document."""
+    """Return a list of item PIDs for this document."""
     return current_app.config["CIRCULATION_ITEMS_RETRIEVER_FROM_DOCUMENT"](
         document_pid
     )
@@ -184,8 +190,11 @@ def get_document_pid_by_item_pid(item_pid):
 
 
 def get_loan_for_item(item_pid):
-    """Return the Loan attached to the given item, if any."""
-    loan = None
+    """Return the Loan attached to the given item, if any.
+
+    :param item_pid: a dict containing `value` and `type` fields to
+        uniquely identify the item.
+    """
     if not item_pid:
         return
 
@@ -193,7 +202,7 @@ def get_loan_for_item(item_pid):
         item_pid=item_pid,
         filter_states=current_app.config["CIRCULATION_STATES_LOAN_ACTIVE"],
     )
-
+    loan = None
     hits = list(search.scan())
     if hits:
         if len(hits) > 1:

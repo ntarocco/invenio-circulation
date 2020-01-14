@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2018-2019 CERN.
-# Copyright (C) 2018-2019 RERO.
+# Copyright (C) 2018-2020 CERN.
+# Copyright (C) 2018-2020 RERO.
 #
 # Invenio-Circulation is free software; you can redistribute it and/or modify
 # it under the terms of the MIT License; see LICENSE file for more details.
@@ -19,10 +19,6 @@ class CirculationException(RESTException):
 
     code = 400
 
-    def __init__(self, **kwargs):
-        """Initialize exception."""
-        super().__init__(**kwargs)
-
     @property
     def name(self):
         """The status name."""
@@ -34,15 +30,15 @@ class CirculationException(RESTException):
             status=self.code,
             message=self.get_description(environ),
             error_module="Circulation",
-            error_class=self.name
+            error_class=self.name,
         )
 
         errors = self.get_errors()
         if self.errors:
-            body['errors'] = errors
+            body["errors"] = errors
 
-        if self.code and (self.code >= 500) and hasattr(g, 'sentry_event_id'):
-            body['error_id'] = str(g.sentry_event_id)
+        if self.code and (self.code >= 500) and hasattr(g, "sentry_event_id"):
+            body["error_id"] = str(g.sentry_event_id)
 
         return json.dumps(body)
 
@@ -55,8 +51,10 @@ class InvalidPermissionError(CirculationException):
 
     def __init__(self, permission=None, **kwargs):
         """Initialize exception."""
-        self.description = "This action is not permitted " \
+        self.description = (
+            "This action is not permitted "
             "for your role '{}'".format(permission)
+        )
         super().__init__(**kwargs)
 
 
@@ -64,7 +62,7 @@ class InvalidPermissionError(CirculationException):
 class TransitionConstraintsViolationError(CirculationException):
     """Exception raised when constraints for the transition failed."""
 
-    description = "Transition constraints have failed."
+    _default = "Transition constraints have failed."
 
 
 class TransitionConditionsFailedError(CirculationException):
@@ -79,7 +77,7 @@ class NoValidTransitionAvailableError(CirculationException):
     def __init__(self, loan_pid=None, state=None, **kwargs):
         """Initialize exception."""
         self.description = (
-            "For the loan with pid '{0}' there are no valid transitions from "
+            "For the loan #'{0}' there are no valid transitions from "
             "its current state '{1}'".format(loan_pid, state)
         )
         super().__init__(**kwargs)
@@ -99,11 +97,15 @@ class ItemNotAvailableError(CirculationException):
     """Exception raised from action on unavailable item."""
 
     def __init__(self, item_pid=None, transition=None, **kwargs):
-        """Initialize exception."""
-        self.description = (
-            "The item requested with pid '{0}' is not available. "
-            "Transition to '{1}' has failed.".format(item_pid, transition)
-        )
+        """Initialize exception.
+
+        :param item_pid: a dict containing `value` and `type` fields to
+            uniquely identify the item.
+        :param transition: the transition that failed.
+        """
+        self.description = "The item requested with PID '{0}:{1}' is not " \
+                           "available. Transition to '{2}' has failed." \
+            .format(item_pid["type"], item_pid["value"], transition)
         super().__init__(**kwargs)
 
 
@@ -113,7 +115,7 @@ class DocumentNotAvailableError(CirculationException):
     def __init__(self, document_pid=None, transition=None, **kwargs):
         """Initialize exception."""
         self.description = (
-            "The document requested with pid '{0}' is not available. "
+            "The document requested with PID '{0}' is not available. "
             "Transition to '{1}' has failed.".format(document_pid, transition)
         )
         super().__init__(**kwargs)
@@ -131,10 +133,13 @@ class MultipleLoansOnItemError(CirculationException):
     """Exception raised when more than one loan on an item."""
 
     def __init__(self, item_pid=None, **kwargs):
-        """Initialize exception."""
-        self.description = (
-            "Multiple active loans on item with pid '{}'".format(item_pid)
-        )
+        """Initialize exception.
+
+        :param item_pid: a dict containing `value` and `type` fields to
+            uniquely identify the item.
+        """
+        self.description = "Multiple active loans on item with PID '{0}:{1}'" \
+            .format(item_pid["type"], item_pid["value"])
         super().__init__(**kwargs)
 
 

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2018-2019 CERN.
-# Copyright (C) 2018-2019 RERO.
+# Copyright (C) 2018-2020 CERN.
+# Copyright (C) 2018-2020 RERO.
 #
 # Invenio-Circulation is free software; you can redistribute it and/or modify
 # it under the terms of the MIT License; see LICENSE file for more details.
@@ -10,20 +10,18 @@
 
 from copy import deepcopy
 
-from flask import Blueprint, current_app, jsonify, request, url_for
+from flask import Blueprint, current_app, request, url_for
 from invenio_db import db
 from invenio_records_rest.utils import obj_or_import_string
 from invenio_records_rest.views import pass_record
 from invenio_rest import ContentNegotiatedMethodView
 
-from .api import get_loan_for_item
 from .errors import InvalidLoanStateError, ItemNotAvailableError, \
     MissingRequiredParameterError
 from .permissions import need_permissions
-from .pidstore.fetchers import loan_pid_fetcher
 from .pidstore.pids import _LOANID_CONVERTER, CIRCULATION_LOAN_PID_TYPE
 from .proxies import current_circulation
-from .records.loaders import loan_loader
+from .records.loaders import loan_loader, loan_replace_item_loader
 from .signals import loan_replace_item
 
 
@@ -57,10 +55,13 @@ def _get_loan_endpoint_options(app):
         mime: obj_or_import_string(func)
         for mime, func in rec_serializers.items()
     }
-    return options, dict(
-        serializers=serializers,
-        default_media_type=default_media_type,
-        ctx={},
+    return (
+        options,
+        dict(
+            serializers=serializers,
+            default_media_type=default_media_type,
+            ctx={},
+        ),
     )
 
 
@@ -116,56 +117,6 @@ class LoanActionResource(ContentNegotiatedMethodView):
         )
 
 
-def create_loan_for_item_blueprint(app):
-    """Create a blueprint for Loan status of Items."""
-    blueprint = Blueprint(
-        "invenio_circulation_loan_for_item", __name__, url_prefix=""
-    )
-
-    _, view_options = _get_loan_endpoint_options(app)
-    loan_request = ItemLoanResource.as_view(
-        ItemLoanResource.view_name,
-        **view_options
-    )
-
-    url = "circulation/items/<string:pid_value>/loan"
-
-    blueprint.add_url_rule(url, view_func=loan_request, methods=["GET"])
-    return blueprint
-
-
-class ItemLoanResource(ContentNegotiatedMethodView):
-    """Item circulation state resource."""
-
-    view_name = "loan_resource"
-
-    def __init__(self, serializers, ctx, *args, **kwargs):
-        """Resource view constructor."""
-        super().__init__(serializers, *args, **kwargs)
-        for key, value in ctx.items():
-            setattr(self, key, value)
-
-    @need_permissions("loan-read-access")
-    def get(self, *args, **kwargs):
-        """Handle GET request for item state."""
-        item_pid = kwargs.get("pid_value", None)
-        if not item_pid:
-            raise ItemNotAvailableError(item_pid=item_pid)
-
-        loan = get_loan_for_item(item_pid)
-        if loan:
-            loan_pid = loan_pid_fetcher(loan.id, loan)
-            return self.make_response(
-                loan_pid,
-                loan,
-                200,
-                links_factory=current_app.config.get(
-                    "CIRCULATION_LOAN_LINKS_FACTORY"
-                ),
-            )
-        return jsonify({})
-
-
 def create_loan_replace_item_blueprint(app):
     """Create a blueprint for replacing Loan Item."""
     blueprint = Blueprint(
@@ -173,6 +124,7 @@ def create_loan_replace_item_blueprint(app):
     )
 
     _, view_options = _get_loan_endpoint_options(app)
+    view_options["ctx"]["loader"] = loan_replace_item_loader
     replace_item_view = LoanReplaceItemResource.as_view(
         LoanReplaceItemResource.view_name.format(CIRCULATION_LOAN_PID_TYPE),
         **view_options
@@ -186,20 +138,27 @@ def create_loan_replace_item_blueprint(app):
 
 
 def validate_replace_item(loan, new_item_pid):
-    """Validate data before replacing an item in loan."""
+    """Validate the new item before replacing the item of the loan.
+
+    :param loan: the current loan to modify.
+    :param new_item_pid: a dict containing `value` and `type` fields to
+        uniquely identify the item.
+    """
     active_states = current_app.config["CIRCULATION_STATES_LOAN_ACTIVE"]
     if loan["state"] not in active_states:
-        raise InvalidLoanStateError(description=(
-            "Cannot replace item in a loan that is not in active state. "
-            "Current loan state '{}'".format(loan["state"])
-        ))
+        raise InvalidLoanStateError(
+            description=(
+                "Cannot replace item in a loan that is not in active state. "
+                "Current loan state '{}'".format(loan["state"])
+            )
+        )
 
     if not new_item_pid:
         raise MissingRequiredParameterError(
-            description="Parameter 'item_pid' is required."
+            description="Parameter 'new_item_pid' is required."
         )
 
-    item_exists_func = current_app.config.get("CIRCULATION_ITEM_EXISTS")
+    item_exists_func = current_app.config["CIRCULATION_ITEM_EXISTS"]
     if not item_exists_func(new_item_pid):
         raise ItemNotAvailableError(item_pid=new_item_pid)
 
@@ -219,8 +178,8 @@ class LoanReplaceItemResource(ContentNegotiatedMethodView):
     @pass_record
     def post(self, pid, record, *args, **kwargs):
         """Handle POST request to update loan with new item."""
-        data = request.get_json()
-        old_item_pid = record["item_pid"]
+        data = self.loader()
+        old_item_pid = record.get("item_pid")
         new_item_pid = data.get("item_pid")
 
         validate_replace_item(record, new_item_pid)
@@ -228,14 +187,11 @@ class LoanReplaceItemResource(ContentNegotiatedMethodView):
 
         record.commit()
         db.session.commit()
+        current_circulation.loan_indexer().index(record)
 
-        current_circulation.loan_indexer.index(record)
         if old_item_pid:
-            loan_replace_item.send(
-                self,
-                old_item_pid=old_item_pid,
-                new_item_pid=record["item_pid"]
-            )
+            loan_replace_item.send(self, old_item_pid=old_item_pid,
+                                   new_item_pid=new_item_pid)
 
         return self.make_response(
             pid,

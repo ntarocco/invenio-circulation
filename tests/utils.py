@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2019 CERN.
-# Copyright (C) 2019 RERO.
+# Copyright (C) 2019-2020 CERN.
+# Copyright (C) 2019-2020 RERO.
 #
 # Invenio-Circulation is free software; you can redistribute it and/or modify
 # it under the terms of the MIT License; see LICENSE file for more details.
@@ -37,19 +37,19 @@ def can_be_requested(loan):
 
 
 # NOTE: Its on purpose `ref` and not `$ref` so it doesn't try to resolve
-def item_ref_builder(loan_pid):
+def item_ref_builder(loan_pid, loan):
     """Return the $ref for given loan_pid."""
     return {"ref": "{}".format(loan_pid)}
 
 
 # NOTE: Its on purpose `ref` and not `$ref` so it doesn't try to resolve
-def patron_ref_builder(loan_pid):
+def patron_ref_builder(loan_pid, loan):
     """Return the $ref for given loan_pid."""
     return {"ref": "{}".format(loan_pid)}
 
 
 # NOTE: Its on purpose `ref` and not `$ref` so it doesn't try to resolve
-def document_ref_builder(loan_pid):
+def document_ref_builder(loan_pid, loan):
     """Return the $ref for given loan_pid."""
     return {"ref": "{}".format(loan_pid)}
 
@@ -79,3 +79,13 @@ def is_loan_duration_valid(loan):
     return loan["end_date"] > loan["start_date"] and loan["end_date"] - loan[
         "start_date"
     ] < timedelta(days=60)
+
+
+def transaction_location_validator(transaction_location_pid):
+    """Validate that the given transaction location PID is valid."""
+    return transaction_location_pid == "loc_pid"
+
+
+def transaction_user_validator(transaction_user_pid):
+    """Validate that the given transaction user PID is valid."""
+    return transaction_user_pid == "user_pid"

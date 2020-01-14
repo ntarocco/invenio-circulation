@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2018-2019 CERN.
-# Copyright (C) 2018-2019 RERO.
+# Copyright (C) 2018-2020 CERN.
+# Copyright (C) 2018-2020 RERO.
 #
 # Invenio-Circulation is free software; you can redistribute it and/or modify
 # it under the terms of the MIT License; see LICENSE file for more details.
@@ -21,16 +21,17 @@ def test_loan_request_on_document_with_auto_available_item_assignment(
     mock_is_item_available_for_checkout.return_value = True
 
     # we have a request just on document_pid
-    del params['item_pid']
+    del params["item_pid"]
 
     # mock functions for automatically assigning an available item
     # and a default pickup location
+    other_pid = dict(type="itemid", value="other_pid")
     with SwappedConfig(
-        "CIRCULATION_ITEMS_RETRIEVER_FROM_DOCUMENT", lambda x: ["other_pid"]
+        "CIRCULATION_ITEMS_RETRIEVER_FROM_DOCUMENT", lambda x: [other_pid]
     ):
         with SwappedConfig(
             "CIRCULATION_ITEM_LOCATION_RETRIEVER",
-            lambda x: "pickup_location_pid"
+            lambda x: "pickup_location_pid",
         ):
             loan = current_circulation.circulation.trigger(
                 loan_created, **dict(params, trigger="request")
@@ -38,7 +39,7 @@ def test_loan_request_on_document_with_auto_available_item_assignment(
 
     assert loan["state"] == "PENDING"
     assert loan["pickup_location_pid"] == "pickup_location_pid"
-    assert loan["item_pid"] == "other_pid"
+    assert loan["item_pid"] == other_pid
     assert loan["transaction_date"]
 
 
@@ -46,8 +47,7 @@ def test_loan_request_on_available_item_with_pickup(loan_created, params):
     """Test loan request action on available item with pickup override."""
 
     with SwappedConfig(
-        "CIRCULATION_ITEM_LOCATION_RETRIEVER",
-        lambda x: "pickup_location_pid"
+        "CIRCULATION_ITEM_LOCATION_RETRIEVER", lambda x: "pickup_location_pid"
     ):
         loan = current_circulation.circulation.trigger(
             loan_created,
@@ -66,15 +66,10 @@ def test_loan_request_on_available_item_default_location(loan_created, params):
     """Test loan request action on available item without pickup override."""
 
     with SwappedConfig(
-        "CIRCULATION_ITEM_LOCATION_RETRIEVER",
-        lambda x: "pickup_location_pid"
+        "CIRCULATION_ITEM_LOCATION_RETRIEVER", lambda x: "pickup_location_pid"
     ):
         loan = current_circulation.circulation.trigger(
-            loan_created,
-            **dict(
-                params,
-                trigger="request",
-            )
+            loan_created, **dict(params, trigger="request")
         )
     assert loan["state"] == "PENDING"
     assert loan["pickup_location_pid"] == "pickup_location_pid"
@@ -88,7 +83,7 @@ def test_loan_request_on_document_with_unavailable_items(
     mock_is_item_available_for_checkout.return_value = False
 
     # we have a request just on document_pid
-    del params['item_pid']
+    del params["item_pid"]
 
     # find an item attached to the document, which will be unavailable
     with SwappedConfig(
@@ -109,8 +104,10 @@ def test_loan_request_on_document_with_unavailable_items(
 
 
 def test_auto_assignment_of_returned_item_to_pending_document_requests(
-    loan_created, params, mock_is_item_available_for_checkout,
-    mock_get_pending_loans_by_doc_pid
+    loan_created,
+    params,
+    mock_is_item_available_for_checkout,
+    mock_get_pending_loans_by_doc_pid,
 ):
     """Test assignment of newly available items to pending doc requests."""
     mock_is_item_available_for_checkout.return_value = True
@@ -120,9 +117,8 @@ def test_auto_assignment_of_returned_item_to_pending_document_requests(
     with SwappedConfig(
         "CIRCULATION_DOCUMENT_RETRIEVER_FROM_ITEM", lambda x: "document_pid"
     ):
-        same_location = params["transaction_location_pid"]
         with SwappedConfig(
-            "CIRCULATION_ITEM_LOCATION_RETRIEVER", lambda x: same_location
+            "CIRCULATION_ITEM_LOCATION_RETRIEVER", lambda x: "loc_pid"
         ):
             # start a loan on item with pid 'item_pid'
             new_loan = current_circulation.circulation.trigger(
@@ -130,16 +126,14 @@ def test_auto_assignment_of_returned_item_to_pending_document_requests(
                 **dict(
                     params,
                     trigger="checkout",
-                    item_pid="item_pid",
-                    pickup_location_pid="pickup_location_pid",
+                    item_pid=dict(type="itemid", value="item_pid"),
+                    pickup_location_pid="loc_pid",
                 )
             )
             assert new_loan["state"] == "ITEM_ON_LOAN"
 
             # create a new loan request on document_pid without items available
-            new_loan_created = Loan.create({
-                "pid": "2"
-            })
+            new_loan_created = Loan.create({"pid": "2"})
             # remove item_pid
             params.pop("item_pid")
             pending_loan = current_circulation.circulation.trigger(
@@ -148,7 +142,7 @@ def test_auto_assignment_of_returned_item_to_pending_document_requests(
                     params,
                     trigger="request",
                     document_pid="document_pid",
-                    pickup_location_pid="pickup_location_pid",
+                    pickup_location_pid="loc_pid",
                 )
             )
             assert pending_loan["state"] == "PENDING"
@@ -163,8 +157,8 @@ def test_auto_assignment_of_returned_item_to_pending_document_requests(
                 new_loan,
                 **dict(
                     params,
-                    item_pid="item_pid",
-                    pickup_location_pid="pickup_location_pid",
+                    item_pid=dict(type="itemid", value="item_pid"),
+                    pickup_location_pid="loc_pid",
                 )
             )
             assert returned_loan["state"] == "ITEM_RETURNED"
@@ -172,5 +166,7 @@ def test_auto_assignment_of_returned_item_to_pending_document_requests(
             # item `item_pid` has been attached to pending loan request on
             # `document_pid` automatically
             assert pending_loan["state"] == "PENDING"
-            assert pending_loan["item_pid"] == "item_pid"
+            assert pending_loan["item_pid"] == dict(
+                type="itemid", value="item_pid"
+            )
             assert pending_loan["document_pid"] == "document_pid"

@@ -36,8 +36,16 @@
         "extension_count": {
           "type": "short"
         },
-        "item_pid": {
-          "type": "keyword"
+        "item_pid":{
+          "properties": {
+            "type": {
+              "type": "keyword"
+            },
+            "value": {
+              "type": "keyword"
+            }
+          },
+          "type": "object"
         },
         "patron_pid": {
           "type": "keyword"

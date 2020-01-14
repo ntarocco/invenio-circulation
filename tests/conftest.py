@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2018-2019 CERN.
-# Copyright (C) 2018-2019 RERO.
+# Copyright (C) 2018-2020 CERN.
+# Copyright (C) 2018-2020 RERO.
 #
 # Invenio-Circulation is free software; you can redistribute it and/or modify
 # it under the terms of the MIT License; see LICENSE file for more details.
@@ -33,7 +33,8 @@ from .utils import can_be_requested, document_exists, document_ref_builder, \
     get_default_extension_duration, get_default_extension_max_count, \
     get_default_loan_duration, is_loan_duration_valid, item_can_circulate, \
     item_exists, item_location_retriever, item_ref_builder, patron_exists, \
-    patron_ref_builder
+    patron_ref_builder, transaction_location_validator, \
+    transaction_user_validator
 
 
 @pytest.fixture(scope="module")
@@ -55,6 +56,10 @@ def app_config(app_config):
     app_config["CIRCULATION_PATRON_REF_BUILDER"] = patron_ref_builder
     app_config["CIRCULATION_DOCUMENT_REF_BUILDER"] = document_ref_builder
     app_config["CIRCULATION_ITEM_LOCATION_RETRIEVER"] = item_location_retriever
+    app_config["CIRCULATION_TRANSACTION_LOCATION_VALIDATOR"] = \
+        transaction_location_validator
+    app_config["CIRCULATION_TRANSACTION_USER_VALIDATOR"] = \
+        transaction_user_validator
     app_config["CIRCULATION_DOCUMENT_RETRIEVER_FROM_ITEM"] = \
         lambda x: "document_pid"
     app_config["CIRCULATION_POLICIES"] = dict(
@@ -93,7 +98,7 @@ def params():
         transaction_user_pid="user_pid",
         patron_pid="patron_pid",
         document_pid="document_pid",
-        item_pid="item_pid",
+        item_pid=dict(type="itemid", value="item_pid"),
         transaction_location_pid="loc_pid",
     )
 

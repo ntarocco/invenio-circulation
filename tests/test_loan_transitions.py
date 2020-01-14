@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2018-2019 CERN.
-# Copyright (C) 2018-2019 RERO.
+# Copyright (C) 2018-2020 CERN.
+# Copyright (C) 2018-2020 RERO.
 #
 # Invenio-Circulation is free software; you can redistribute it and/or modify
 # it under the terms of the MIT License; see LICENSE file for more details.
@@ -26,8 +26,10 @@ from .helpers import SwappedConfig, SwappedNestedConfig
 
 
 def test_override_transaction_date(
-    mock_get_pending_loans_by_doc_pid, loan_created, params,
-    mock_is_item_available_for_checkout
+    mock_get_pending_loans_by_doc_pid,
+    loan_created,
+    params,
+    mock_is_item_available_for_checkout,
 ):
     """Test override transaction date."""
     mock_get_pending_loans_by_doc_pid.return_value = []
@@ -45,8 +47,10 @@ def test_override_transaction_date(
 
 
 def test_loan_checkout_checkin(
-    mock_get_pending_loans_by_doc_pid, loan_created, params,
-    mock_is_item_available_for_checkout
+    mock_get_pending_loans_by_doc_pid,
+    loan_created,
+    params,
+    mock_is_item_available_for_checkout,
 ):
     """Test loan checkout and checkin actions."""
 
@@ -69,15 +73,18 @@ def test_loan_checkout_checkin(
 
 
 def test_can_change_item_and_loc_pid_before_checkout(
-    mock_get_pending_loans_by_doc_pid, loan_created, db, params,
-    mock_is_item_available_for_checkout
+    mock_get_pending_loans_by_doc_pid,
+    loan_created,
+    db,
+    params,
+    mock_is_item_available_for_checkout,
 ):
     """Test that item pid can be changed before the item is on loan."""
 
     mock_get_pending_loans_by_doc_pid.return_value = []
     mock_is_item_available_for_checkout.return_value = True
-    item_pid = params['item_pid']
-    del params['item_pid']
+    item_pid = params["item_pid"]
+    del params["item_pid"]
 
     # auto assign both available item pid and the location corresponding to it
     with SwappedConfig(
@@ -85,14 +92,14 @@ def test_can_change_item_and_loc_pid_before_checkout(
     ):
         with SwappedConfig(
             "CIRCULATION_ITEM_LOCATION_RETRIEVER",
-            lambda x: "pickup_location_pid"
+            lambda x: "pickup_location_pid",
         ):
             loan = current_circulation.circulation.trigger(
                 loan_created, **dict(params, trigger="request")
             )
     assert loan["state"] == "PENDING"
     assert loan["pickup_location_pid"] == "pickup_location_pid"
-    assert loan["item_pid"] == "item_pid"
+    assert loan["item_pid"] == dict(type="itemid", value="item_pid")
 
     with SwappedConfig(
         "CIRCULATION_ITEM_LOCATION_RETRIEVER", lambda x: "pickup_location_pid"
@@ -100,55 +107,81 @@ def test_can_change_item_and_loc_pid_before_checkout(
         changed_loan = copy.deepcopy(loan)
         changed_loan = current_circulation.circulation.trigger(
             changed_loan,
-            **dict(params, trigger="next", item_pid="other_item_pid_1",
-                   pickup_location_pid="other_location_pid_1"))
+            **dict(
+                params,
+                trigger="next",
+                item_pid=dict(type="itemid", value="other_item_pid_1"),
+                pickup_location_pid="other_location_pid_1",
+            )
+        )
         db.session.commit()
         assert changed_loan["state"] == "ITEM_IN_TRANSIT_FOR_PICKUP"
-        assert changed_loan["item_pid"] == "other_item_pid_1"
+        assert changed_loan["item_pid"] == dict(
+            type="itemid", value="other_item_pid_1"
+        )
         assert changed_loan["pickup_location_pid"] == "other_location_pid_1"
 
         changed_loan = copy.deepcopy(loan)
         changed_loan = current_circulation.circulation.trigger(
             changed_loan,
-            **dict(params, trigger="next", item_pid="other_item_pid_2"))
+            **dict(
+                params,
+                trigger="next",
+                item_pid=dict(type="itemid", value="other_item_pid_2"),
+            )
+        )
         db.session.commit()
         assert changed_loan["state"] == "ITEM_AT_DESK"
-        assert changed_loan["item_pid"] == "other_item_pid_2"
+        assert changed_loan["item_pid"] == dict(
+            type="itemid", value="other_item_pid_2"
+        )
         assert changed_loan["pickup_location_pid"] == "pickup_location_pid"
 
         changed_loan = copy.deepcopy(loan)
         changed_loan = current_circulation.circulation.trigger(
             changed_loan,
-            **dict(params, trigger="checkout", item_pid="other_item_pid_3",
-                   pickup_location_pid="other_location_pid_3"))
+            **dict(
+                params,
+                trigger="checkout",
+                item_pid=dict(type="itemid", value="other_item_pid_3"),
+                pickup_location_pid="other_location_pid_3",
+            )
+        )
         db.session.commit()
         assert changed_loan["state"] == "ITEM_ON_LOAN"
-        assert changed_loan["item_pid"] == "other_item_pid_3"
+        assert changed_loan["item_pid"] == dict(
+            type="itemid", value="other_item_pid_3"
+        )
         assert changed_loan["pickup_location_pid"] == "other_location_pid_3"
 
 
 def test_cannot_change_item_pid_after_checkout(
-    mock_get_pending_loans_by_doc_pid, loan_created, params,
-    mock_is_item_available_for_checkout
+    mock_get_pending_loans_by_doc_pid,
+    loan_created,
+    params,
+    mock_is_item_available_for_checkout,
 ):
     """Test that item pid cannot be changed after the item is on loan."""
     mock_get_pending_loans_by_doc_pid.return_value = []
     mock_is_item_available_for_checkout.return_value = True
-    del params['item_pid']
+    del params["item_pid"]
 
     # auto assign both available item pid and the location corresponding to it
 
     with SwappedConfig(
-        "CIRCULATION_ITEM_LOCATION_RETRIEVER",
-        lambda x: "pickup_location_pid"
+        "CIRCULATION_ITEM_LOCATION_RETRIEVER", lambda x: "pickup_location_pid"
     ):
         loan = current_circulation.circulation.trigger(
-            loan_created, **dict(params, trigger="checkout",
-                                 item_pid="item_pid")
+            loan_created,
+            **dict(
+                params,
+                trigger="checkout",
+                item_pid=dict(type="itemid", value="item_pid"),
+            )
         )
 
     assert loan["state"] == "ITEM_ON_LOAN"
-    assert loan["item_pid"] == "item_pid"
+    assert loan["item_pid"] == dict(type="itemid", value="item_pid")
     assert loan["pickup_location_pid"] == "pickup_location_pid"
 
     with SwappedConfig(
@@ -158,23 +191,39 @@ def test_cannot_change_item_pid_after_checkout(
         with pytest.raises(ItemDoNotMatchError):
             current_circulation.circulation.trigger(
                 changed_loan,
-                **dict(params, trigger="next", item_pid="other_item_pid_1"))
+                **dict(
+                    params,
+                    trigger="next",
+                    item_pid=dict(type="itemid", value="other_item_pid_1"),
+                )
+            )
 
         changed_loan = copy.deepcopy(loan)
         with pytest.raises(ItemDoNotMatchError):
             current_circulation.circulation.trigger(
                 changed_loan,
-                **dict(params, trigger="extend", item_pid="other_item_pid_2"))
+                **dict(
+                    params,
+                    trigger="extend",
+                    item_pid=dict(type="itemid", value="other_item_pid_2"),
+                )
+            )
 
         changed_loan = copy.deepcopy(loan)
         with pytest.raises(ItemDoNotMatchError):
             current_circulation.circulation.trigger(
                 changed_loan,
-                **dict(params, trigger="cancel", item_pid="other_item_pid_3"))
+                **dict(
+                    params,
+                    trigger="cancel",
+                    item_pid=dict(type="itemid", value="other_item_pid_3"),
+                )
+            )
 
 
-def test_loan_extend(loan_created, params,
-                     mock_ensure_item_is_available_for_checkout):
+def test_loan_extend(
+    loan_created, params, mock_ensure_item_is_available_for_checkout
+):
     """Test loan extend action."""
 
     mock_ensure_item_is_available_for_checkout.side_effect = None
@@ -188,8 +237,7 @@ def test_loan_extend(loan_created, params,
     end_date_with_ext = end_date + default_extension_duration
 
     with SwappedNestedConfig(
-        ["CIRCULATION_POLICIES", "extension", "max_count"],
-        lambda x: 0,
+        ["CIRCULATION_POLICIES", "extension", "max_count"], lambda x: 0
     ):
         with pytest.raises(LoanMaxExtensionError):
             loan = current_circulation.circulation.trigger(
@@ -197,8 +245,7 @@ def test_loan_extend(loan_created, params,
             )
 
     with SwappedNestedConfig(
-        ["CIRCULATION_POLICIES", "extension", "max_count"],
-        lambda x: 2,
+        ["CIRCULATION_POLICIES", "extension", "max_count"], lambda x: 2
     ):
         loan = current_circulation.circulation.trigger(
             loan, **dict(params, trigger="extend")
@@ -231,7 +278,7 @@ def test_loan_extend_from_enddate(
     )
     extension_date = str2datetime(loan["transaction_date"])
     with SwappedNestedConfig(
-        ["CIRCULATION_POLICIES", "extension", "from_end_date"], False,
+        ["CIRCULATION_POLICIES", "extension", "from_end_date"], False
     ):
         loan = current_circulation.circulation.trigger(
             loan, **dict(params, trigger="extend")
@@ -243,8 +290,9 @@ def test_loan_extend_from_enddate(
     assert loan["extension_count"] == 1
 
 
-def test_cancel_action(loan_created, params,
-                       mock_ensure_item_is_available_for_checkout):
+def test_cancel_action(
+    loan_created, params, mock_ensure_item_is_available_for_checkout
+):
     """Test should pass when calling `cancel` from `ITEM_ON_LOAN`."""
 
     mock_ensure_item_is_available_for_checkout.side_effect = None
@@ -407,7 +455,9 @@ def test_checkout_fails_when_duration_invalid(
 
 def test_checkin_end_date_is_transaction_date(
     mock_get_pending_loans_by_doc_pid,
-    mock_ensure_item_is_available_for_checkout, loan_created, params
+    mock_ensure_item_is_available_for_checkout,
+    loan_created,
+    params,
 ):
     """Test date the checkin date is the transaction date."""
     mock_get_pending_loans_by_doc_pid.return_value = []
@@ -443,20 +493,35 @@ def test_checkin_end_date_is_transaction_date(
 
 def test_item_availability(indexed_loans):
     """Test item_availability with various conditions."""
-    assert is_item_available_for_checkout(item_pid="item_pending_1")
-    assert not is_item_available_for_checkout(item_pid="item_on_loan_2")
-    assert is_item_available_for_checkout(item_pid="item_returned_3")
-    assert not is_item_available_for_checkout(item_pid="item_in_transit_4")
-    assert not is_item_available_for_checkout(item_pid="item_at_desk_5")
+    assert is_item_available_for_checkout(
+        item_pid=dict(type="itemid", value="item_pending_1")
+    )
     assert not is_item_available_for_checkout(
-        item_pid="item_pending_on_loan_6")
-    assert is_item_available_for_checkout(item_pid="item_returned_6")
-    assert is_item_available_for_checkout(item_pid="no_loan")
+        item_pid=dict(type="itemid", value="item_on_loan_2")
+    )
+    assert is_item_available_for_checkout(
+        item_pid=dict(type="itemid", value="item_returned_3")
+    )
+    assert not is_item_available_for_checkout(
+        item_pid=dict(type="itemid", value="item_in_transit_4")
+    )
+    assert not is_item_available_for_checkout(
+        item_pid=dict(type="itemid", value="item_at_desk_5")
+    )
+    assert not is_item_available_for_checkout(
+        item_pid=dict(type="itemid", value="item_pending_on_loan_6")
+    )
+    assert is_item_available_for_checkout(
+        item_pid=dict(type="itemid", value="item_returned_6")
+    )
+    assert is_item_available_for_checkout(
+        item_pid=dict(type="itemid", value="no_loan")
+    )
 
 
-def test_checkout_item_unavailable_steps(loan_created,  params, users):
+def test_checkout_item_unavailable_steps(loan_created, params, users):
     """Test checkout attempt on unavailable item."""
-    user = users['manager']
+    user = users["manager"]
     login_user(user)
     with pytest.raises(NoValidTransitionAvailableError):
         # loan created

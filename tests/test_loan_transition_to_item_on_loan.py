@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2018-2019 CERN.
-# Copyright (C) 2018-2019 RERO.
+# Copyright (C) 2018-2020 CERN.
+# Copyright (C) 2018-2020 RERO.
 #
 # Invenio-Circulation is free software; you can redistribute it and/or modify
 # it under the terms of the MIT License; see LICENSE file for more details.
@@ -39,7 +39,7 @@ def test_created_to_item_on_loan_available_item_with_default_location(
 
     assert loan["state"] == "ITEM_ON_LOAN"
     assert loan["pickup_location_pid"] == "pickup_location_pid"
-    assert loan["item_pid"] == "item_pid"
+    assert loan["item_pid"] == dict(type="itemid", value="item_pid")
 
 
 def test_created_to_item_on_loan_available_item_with_specified_location(
@@ -62,7 +62,7 @@ def test_created_to_item_on_loan_available_item_with_specified_location(
 
     assert loan["state"] == "ITEM_ON_LOAN"
     assert loan["pickup_location_pid"] == "other_location_pid"
-    assert loan["item_pid"] == "item_pid"
+    assert loan["item_pid"] == dict(type="itemid", value="item_pid")
 
 
 def test_created_to_item_on_loan_unavailable_item(
@@ -73,7 +73,8 @@ def test_created_to_item_on_loan_unavailable_item(
     assert loan_created["state"] == "CREATED"
 
     mock_ensure_item_is_available_for_checkout.side_effect = \
-        ItemNotAvailableError(description="Item Not Available")
+        ItemNotAvailableError(item_pid=dict(type="itemid", value="1"),
+                              transition="Fake Transition")
 
     with pytest.raises(ItemNotAvailableError):
         with SwappedConfig(
@@ -103,7 +104,7 @@ def test_created_to_item_on_loan_available_item_with_invalid_duration(
             "CIRCULATION_ITEM_LOCATION_RETRIEVER",
             lambda x: "pickup_location_pid"
         ):
-            loan = current_circulation.circulation.trigger(
+            current_circulation.circulation.trigger(
                 loan_created, **dict(params, trigger="checkout")
             )
 
@@ -131,7 +132,7 @@ def test_created_to_item_on_loan_available_item_with_valid_duration(
 
     assert loan["state"] == "ITEM_ON_LOAN"
     assert loan["pickup_location_pid"] == "pickup_location_pid"
-    assert loan["item_pid"] == "item_pid"
+    assert loan["item_pid"] == dict(type="itemid", value="item_pid")
     assert loan["transaction_date"] == params["transaction_date"].isoformat()
 
 
@@ -159,4 +160,4 @@ def test_pending_to_item_on_loan_available_item(
 
         assert loan["state"] == "ITEM_ON_LOAN"
         assert loan["pickup_location_pid"] == "other_location_pid"
-        assert loan["item_pid"] == "item_pid"
+        assert loan["item_pid"] == dict(type="itemid", value="item_pid")

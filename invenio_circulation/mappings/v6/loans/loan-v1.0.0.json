@@ -37,7 +37,15 @@
           "type": "short"
         },
         "item_pid": {
-          "type": "keyword"
+          "properties": {
+            "type": {
+              "type": "keyword"
+            },
+            "value": {
+              "type": "keyword"
+            }
+          },
+          "type": "object"
         },
         "patron_pid": {
           "type": "keyword"

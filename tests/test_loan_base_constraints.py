@@ -46,7 +46,7 @@ def test_should_fail_when_item_is_changed(loan_created, params):
             loan_created, **dict(params, trigger="checkout")
         )
 
-    params["item_pid"] = "different_item_pid"
+    params["item_pid"] = dict(type="itemid", value="different_item_pid")
     with pytest.raises(ItemDoNotMatchError):
         current_circulation.circulation.trigger(loan, **dict(params))
 

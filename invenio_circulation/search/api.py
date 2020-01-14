@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2018 CERN.
-# Copyright (C) 2018 RERO.
+# Copyright (C) 2018-2020 CERN.
+# Copyright (C) 2018-2020 RERO.
 #
 # Invenio-Circulation is free software; you can redistribute it and/or modify
 # it under the terms of the MIT License; see LICENSE file for more details.
@@ -29,25 +29,37 @@ class LoansSearch(RecordsSearch):
         """Add method `exclude` to old elastic search versions."""
         if ES_VERSION[0] == 2:
             from elasticsearch_dsl.query import Bool, Q
+
             return self.query(Bool(filter=[~Q(*args, **kwargs)]))
         else:
             return super().exclude(*args, **kwargs)
 
 
-def search_by_pid(item_pid=None, document_pid=None, filter_states=None,
-                  exclude_states=None, sort_by_field=None, sort_order="asc"):
+def search_by_pid(
+    item_pid=None,
+    document_pid=None,
+    filter_states=None,
+    exclude_states=None,
+    sort_by_field=None,
+    sort_order="asc",
+):
     """Retrieve loans attached to the given item or document."""
-    search = current_circulation.loan_search
+    search_cls = current_circulation.loan_search_cls
+    search = search_cls()
 
     if document_pid:
         search = search.filter("term", document_pid=document_pid)
     elif item_pid:
-        search = search.filter("term", item_pid=item_pid)
+        search = search \
+            .filter("term", item_pid__value=item_pid["value"]) \
+            .filter("term", item_pid__type=item_pid["type"])
     else:
-        raise MissingRequiredParameterError(description=(
-            "One of the parameters 'item_pid' "
-            "or 'document_pid' is required."
-        ))
+        raise MissingRequiredParameterError(
+            description=(
+                "One of the parameters 'item_pid' "
+                "or 'document_pid' is required."
+            )
+        )
 
     if filter_states:
         search = search.filter("terms", state=filter_states)
@@ -60,15 +72,17 @@ def search_by_pid(item_pid=None, document_pid=None, filter_states=None,
     return search
 
 
-def search_by_patron_item_or_document(patron_pid, item_pid=None,
-                                      document_pid=None, filter_states=None):
+def search_by_patron_item_or_document(
+    patron_pid, item_pid=None, document_pid=None, filter_states=None
+):
     """Retrieve loans for patron given an item."""
-    search = current_circulation.loan_search
-    search = search \
-        .filter("term", patron_pid=patron_pid)
+    search_cls = current_circulation.loan_search_cls
+    search = search_cls().filter("term", patron_pid=patron_pid)
 
     if item_pid:
-        search = search.filter("term", item_pid=item_pid)
+        search = search \
+            .filter("term", item_pid__value=item_pid["value"]) \
+            .filter("term", item_pid__type=item_pid["type"])
     if document_pid:
         search = search.filter("term", document_pid=document_pid)
 
@@ -80,6 +94,6 @@ def search_by_patron_item_or_document(patron_pid, item_pid=None,
 
 def search_by_patron_pid(patron_pid):
     """Retrieve loans of a patron."""
-    search = current_circulation.loan_search
-    search = search.filter("term", patron_pid=patron_pid)
+    search_cls = current_circulation.loan_search_cls
+    search = search_cls().filter("term", patron_pid=patron_pid)
     return search

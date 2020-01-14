@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2018-2019 CERN.
-# Copyright (C) 2018-2019 RERO.
+# Copyright (C) 2018-2020 CERN.
+# Copyright (C) 2018-2020 RERO.
 #
 # Invenio-Circulation is free software; you can redistribute it and/or modify
 # it under the terms of the MIT License; see LICENSE file for more details.
@@ -99,7 +99,7 @@ def test_checkout_with_different_pickup_location(loan_created, params):
                                  pickup_location_pid="pickup_location_pid")
         )
 
-        assert loan["item_pid"] == "item_pid"
+        assert loan["item_pid"] == dict(type="itemid", value="item_pid")
         assert loan["pickup_location_pid"] == "pickup_location_pid"
         assert loan["state"] == "PENDING"
 
@@ -124,7 +124,7 @@ def test_checkout_with_same_pickup_location(loan_created, params):
                                  pickup_location_pid="pickup_location_pid")
         )
 
-        assert loan["item_pid"] == "item_pid"
+        assert loan["item_pid"] == dict(type="itemid", value="item_pid")
         assert loan["pickup_location_pid"] == "pickup_location_pid"
         assert loan["state"] == "PENDING"
 

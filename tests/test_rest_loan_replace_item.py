@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2019 CERN.
-# Copyright (C) 2019 RERO.
+# Copyright (C) 2019-2020 CERN.
+# Copyright (C) 2019-2020 RERO.
 #
 # Invenio-Circulation is free software; you can redistribute it and/or modify
 # it under the terms of the MIT License; see LICENSE file for more details.
@@ -28,9 +28,9 @@ def _post(app, json_headers, loan, payload):
 
 def test_loan_replace_item(app, json_headers, indexed_loans):
     """Test that no Loan is returned for the given Item if only pendings."""
-    item_pid = "item_on_loan_2"
+    item_pid = dict(type="itemid", value="item_on_loan_2")
     loan = get_loan_for_item(item_pid)
-    payload = {"item_pid": "new_item_pid"}
+    payload = dict(item_pid=dict(type="itemid", value="new_item_pid"))
     res, data = _post(app, json_headers, loan, payload)
     assert res.status == "202 ACCEPTED"
     assert data["metadata"]["item_pid"] == payload["item_pid"]
@@ -45,7 +45,7 @@ def test_loan_replace_item_inactive_state(app, json_headers, indexed_loans):
         if _loan["state"] == "ITEM_RETURNED":
             loan = _loan
             break
-    payload = {"item_pid": "new_item_pid"}
+    payload = dict(item_pid=dict(type="itemid", value="new_item_pid"))
     res, data = _post(app, json_headers, loan, payload)
     assert data["status"] == 400
     assert data["message"] == (
@@ -56,7 +56,7 @@ def test_loan_replace_item_inactive_state(app, json_headers, indexed_loans):
 
 def test_loan_replace_item_wo_params(app, json_headers, indexed_loans):
     """Test that no Loan is returned for the given Item if only pendings."""
-    item_pid = "item_on_loan_2"
+    item_pid = dict(type="itemid", value="item_on_loan_2")
     loan = get_loan_for_item(item_pid)
     payload = {}
     res, data = _post(app, json_headers, loan, payload)
@@ -66,6 +66,6 @@ def test_loan_replace_item_wo_params(app, json_headers, indexed_loans):
 def test_loan_replace_item_wo_loan(app, json_headers, indexed_loans):
     """Test that no Loan is returned for the given Item if only pendings."""
     loan = {"pid": "not_existing_one"}
-    payload = {"item_pid": "item_on_loan_2"}
+    payload = dict(type="itemid", value="item_on_loan_2")
     res, data = _post(app, json_headers, loan, payload)
     assert data["status"] == 404

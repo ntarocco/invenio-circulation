@@ -58,12 +58,11 @@ def test_record_cannot_be_requested(app):
 
 def test_item_not_available(app):
     """Test item not available."""
-    item_pid = "1"
+    item_pid = dict(type="itemid", value="1")
     transition = "checkout"
-    msg = (
-        "The item requested with pid '{0}' is not available. "
-        "Transition to '{1}' has failed.".format(item_pid, transition)
-    )
+    msg = "The item requested with PID '{0}:{1}' is not available. " \
+          "Transition to '{2}' has failed." \
+        .format(item_pid["type"], item_pid["value"], transition)
     with pytest.raises(ItemNotAvailableError) as ex:
         raise ItemNotAvailableError(item_pid=item_pid, transition=transition)
 
@@ -73,8 +72,9 @@ def test_item_not_available(app):
 
 def test_multiple_loans_on_item(app):
     """Test multiple loans on item."""
-    item_pid = "1"
-    msg = "Multiple active loans on item with pid '{}'".format(item_pid)
+    item_pid = dict(type="itemid", value="1")
+    msg = "Multiple active loans on item with PID '{0}:{1}'" \
+        .format(item_pid["type"], item_pid["value"])
     with pytest.raises(MultipleLoansOnItemError) as ex:
         raise MultipleLoansOnItemError(item_pid=item_pid)
 
@@ -94,10 +94,10 @@ def test_invalid_loan_state(app):
 
 def test_no_valid_transitions_available(app):
     """Test no valid transitions available."""
-    loan_pid = 'pid'
+    loan_pid = "pid"
     state = "not_valid"
     msg = (
-        "For the loan with pid '{0}' there are no valid transitions from "
+        "For the loan #'{0}' there are no valid transitions from "
         "its current state '{1}'".format(loan_pid, state)
     )
     with pytest.raises(NoValidTransitionAvailableError) as ex:
@@ -118,7 +118,7 @@ def test_transition_conditions_failed(app):
 
 def test_transition_constraints_violation(app):
     """Test transition constraints violation."""
-    msg = "The contraints of the transitions have been wildely violated."
+    msg = "The constraints of the transitions have been violated."
     with pytest.raises(TransitionConstraintsViolationError) as ex:
         raise TransitionConstraintsViolationError(description=msg)
     assert ex.value.code == 400

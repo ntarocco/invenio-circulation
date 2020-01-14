@@ -29,6 +29,7 @@ def test_rest_loader_valid_params(app, json_headers):
         end_date = now + timedelta(days=30)
         params = dict(
             document_pid="document_pid",
+            item_pid=dict(type="itemid", value="1"),
             patron_pid="patron_pid",
             transaction_date=now.isoformat(),
             transaction_location_pid="loc_pid",
@@ -58,6 +59,8 @@ def test_rest_loader_valid_params(app, json_headers):
         {"start_date": arrow.utcnow().isoformat()},
         {"end_date": arrow.utcnow().isoformat()},
         {"request_expire_date": arrow.utcnow().isoformat()},
+        {"item_pid": dict(value="1")},
+        {"item_pid": dict(type="itemid")}
     ]
 )
 def test_rest_loader_invalid_transaction_date_format(

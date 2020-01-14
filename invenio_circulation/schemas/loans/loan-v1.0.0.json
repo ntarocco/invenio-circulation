@@ -49,8 +49,16 @@
       "type": "object"
     },
     "item_pid": {
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
       "title": "Item ID",
-      "type": "string"
+      "type": "object"
     },
     "patron_pid": {
       "title": "Patron ID",

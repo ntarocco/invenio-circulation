@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2019 CERN.
-# Copyright (C) 2019 RERO.
+# Copyright (C) 2019-2020 CERN.
+# Copyright (C) 2019-2020 RERO.
 #
 # invenio-circulation is free software; you can redistribute it and/or modify
 # it under the terms of the MIT License; see LICENSE file for more details.
@@ -11,10 +11,11 @@
 from datetime import date, datetime
 
 import arrow
+from flask import current_app
 from flask_babelex import lazy_gettext as _
 from invenio_records_rest.schemas import RecordMetadataSchemaJSONV1
 from invenio_records_rest.schemas.fields import PersistentIdentifier
-from marshmallow import ValidationError, fields
+from marshmallow import Schema, ValidationError, fields, validates
 
 
 class DateTimeString(fields.DateTime):
@@ -22,14 +23,16 @@ class DateTimeString(fields.DateTime):
 
     def __init__(self, **kwargs):
         """Constructor."""
-        kwargs.setdefault('validate', self.validate_timezone)
+        kwargs.setdefault("validate", self.validate_timezone)
         super().__init__(**kwargs)
 
     def validate_timezone(self, value):
         """Validate that the passed timezone, if any, is UTC."""
         # strong validation of input datetime to require UTC timezone
-        if arrow.get(value).isoformat() != \
-                arrow.get(value).to('utc').isoformat():
+        if (
+            arrow.get(value).isoformat()
+            != arrow.get(value).to("utc").isoformat()
+        ):
             raise ValidationError(_("Not a valid ISO-8601 UTC datetime."))
 
     def deserialize(self, value, attr=None, data=None, **kwargs):
@@ -57,6 +60,13 @@ class DateString(fields.Date):
         return _value
 
 
+class LoanItemPIDSchemaV1(Schema):
+    """Loan item PID Schema."""
+
+    type = fields.Str(required=True)
+    value = fields.Str(required=True)
+
+
 class LoanSchemaV1(RecordMetadataSchemaJSONV1):
     """Loan schema."""
 
@@ -64,6 +74,7 @@ class LoanSchemaV1(RecordMetadataSchemaJSONV1):
         """Meta attributes for the schema."""
 
         from marshmallow import EXCLUDE
+
         unknown = EXCLUDE
 
     def get_pid_field(self):
@@ -74,7 +85,7 @@ class LoanSchemaV1(RecordMetadataSchemaJSONV1):
     document_pid = fields.Str()
     end_date = DateString()
     extension_count = fields.Integer()
-    item_pid = fields.Str()
+    item_pid = fields.Nested(LoanItemPIDSchemaV1)
     patron_pid = fields.Str(required=True)
     pid = PersistentIdentifier()
     pickup_location_pid = fields.Str()
@@ -84,3 +95,40 @@ class LoanSchemaV1(RecordMetadataSchemaJSONV1):
     transaction_date = DateTimeString()
     transaction_location_pid = fields.Str(required=True)
     transaction_user_pid = fields.Str(required=True)
+
+    @validates("transaction_location_pid")
+    def validate_transaction_location_pid(self, value,  **kwargs):
+        """Validate transaction_location_pid field."""
+        transaction_location_is_valid = current_app.config[
+            "CIRCULATION_TRANSACTION_LOCATION_VALIDATOR"
+        ]
+        if not transaction_location_is_valid(value):
+            raise ValidationError(
+                _("The loan `transaction_location_pid` is not valid."),
+                field_names=["transaction_location_pid"],
+            )
+
+    @validates("transaction_user_pid")
+    def validate_transaction_user_pid(self, value, **kwargs):
+        """Validate transaction_user_pid field."""
+        transaction_user_is_valid = current_app.config[
+            "CIRCULATION_TRANSACTION_USER_VALIDATOR"
+        ]
+        if not transaction_user_is_valid(value):
+            raise ValidationError(
+                _("The loan `transaction_user_pid` is not valid."),
+                field_names=["transaction_user_pid"],
+            )
+
+
+class LoanReplaceItemSchemaV1(RecordMetadataSchemaJSONV1):
+    """Loan replace item schema."""
+
+    class Meta:
+        """Meta attributes for the schema."""
+
+        from marshmallow import EXCLUDE
+
+        unknown = EXCLUDE
+
+    item_pid = fields.Nested(LoanItemPIDSchemaV1, required=True)

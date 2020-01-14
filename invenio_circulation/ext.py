@@ -18,6 +18,7 @@ from invenio_records_rest.utils import obj_or_import_string
 from werkzeug.utils import cached_property
 
 from . import config
+from .api import Loan
 from .errors import InvalidLoanStateError, NoValidTransitionAvailableError, \
     TransitionConditionsFailedError
 from .pidstore.pids import CIRCULATION_LOAN_PID_TYPE
@@ -72,22 +73,28 @@ class InvenioCirculation(object):
     def _get_endpoint_config(self):
         """Return endpoint configuration for circulation."""
         endpoints = self.app.config.get('CIRCULATION_REST_ENDPOINTS', [])
-        pid_type = CIRCULATION_LOAN_PID_TYPE
-        return endpoints.get(pid_type, {})
+        return endpoints.get(CIRCULATION_LOAN_PID_TYPE, {})
 
     @cached_property
-    def loan_search(self):
+    def loan_record_cls(self):
+        """Return the current Loan record class."""
+        circ_endpoint = self._get_endpoint_config()
+        _cls = circ_endpoint.get('record_class', Loan)
+        return obj_or_import_string(_cls)
+
+    @cached_property
+    def loan_search_cls(self):
         """Return the current Loan search instance."""
         circ_endpoint = self._get_endpoint_config()
         _cls = circ_endpoint.get('search_class', LoansSearch)
-        return obj_or_import_string(_cls)()
+        return obj_or_import_string(_cls)
 
     @cached_property
     def loan_indexer(self):
         """Return the current Loan indexer instance."""
         circ_endpoint = self._get_endpoint_config()
         _cls = circ_endpoint.get('indexer_class', RecordIndexer)
-        return obj_or_import_string(_cls)()
+        return obj_or_import_string(_cls)
 
 
 class _Circulation(object):
@@ -117,9 +124,9 @@ class _Circulation(object):
             try:
                 t.execute(loan, **kwargs)
                 return loan
-            except TransitionConditionsFailedError as ex:
+            except TransitionConditionsFailedError:
                 pass
 
         raise NoValidTransitionAvailableError(
-            loan_pid=str(loan.id), state=current_state
+            loan_pid=loan["pid"], state=current_state
         )
