@@ -63,9 +63,9 @@ def ensure_same_item(f):
                 raise ItemNotAvailableError(description=msg)
 
             wrong_pid_value = loan.get("item_pid") and \
-                              item_pid["value"] != loan["item_pid"]["value"]
+                item_pid["value"] != loan["item_pid"]["value"]
             wrong_pid_type = loan.get("item_pid") and \
-                             item_pid["type"] != loan["item_pid"]["type"]
+                item_pid["type"] != loan["item_pid"]["type"]
             if wrong_pid_value or wrong_pid_type:
                 msg = "Cannot change item '{0}:{1}' while performing an " \
                       "action on this loan" \

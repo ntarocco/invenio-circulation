@@ -125,8 +125,8 @@ class Transition(object):
         self.dest = dest
         self.trigger = trigger
         self.permission_factory = (
-            permission_factory
-            or current_app.config[
+            permission_factory or
+            current_app.config[
                 "CIRCULATION_LOAN_TRANSITIONS_DEFAULT_PERMISSION_FACTORY"
             ]
         )

@@ -30,8 +30,8 @@ class DateTimeString(fields.DateTime):
         """Validate that the passed timezone, if any, is UTC."""
         # strong validation of input datetime to require UTC timezone
         if (
-            arrow.get(value).isoformat()
-            != arrow.get(value).to("utc").isoformat()
+            arrow.get(value).isoformat() !=
+            arrow.get(value).to("utc").isoformat()
         ):
             raise ValidationError(_("Not a valid ISO-8601 UTC datetime."))
 
