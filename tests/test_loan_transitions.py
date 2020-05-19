@@ -266,7 +266,7 @@ def test_loan_extend(
             )
 
 
-def test_loan_extend_from_enddate(
+def test_loan_extend_from_transaction_date(
     loan_created, params, mock_ensure_item_is_available_for_checkout
 ):
     """Test loan extend action from transaction date."""
@@ -344,7 +344,7 @@ def test_checkout_extend_with_timedelta(
     duration = timedelta(hours=4)
     with SwappedNestedConfig(
         ["CIRCULATION_POLICIES", "checkout", "duration_default"],
-        lambda x: duration,
+        lambda _loan, _initial: duration,
     ):
         loan = current_circulation.circulation.trigger(
             loan_created, **dict(params, trigger="checkout")
@@ -360,7 +360,7 @@ def test_checkout_extend_with_timedelta(
     duration = timedelta(days=1)
     with SwappedNestedConfig(
         ["CIRCULATION_POLICIES", "extension", "duration_default"],
-        lambda x: duration,
+        lambda _loan, _initial: duration,
     ):
         # perform an extension
         loan = current_circulation.circulation.trigger(
@@ -373,7 +373,7 @@ def test_checkout_extend_with_timedelta(
     duration = timedelta(days=3, minutes=33)
     with SwappedNestedConfig(
         ["CIRCULATION_POLICIES", "extension", "duration_default"],
-        lambda x: duration,
+        lambda _loan, _initial: duration,
     ):
         # extend again
         loan = current_circulation.circulation.trigger(
@@ -392,7 +392,7 @@ def test_checkout_start_is_transaction_date(
     duration = timedelta(days=10)
     with SwappedNestedConfig(
         ["CIRCULATION_POLICIES", "checkout", "duration_default"],
-        lambda x: duration,
+        lambda _loan, _initial: duration,
     ):
         loan = current_circulation.circulation.trigger(
             loan_created, **dict(params, trigger="checkout")
